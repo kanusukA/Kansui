@@ -17,38 +17,48 @@ import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kasui.Presentation.NavState
 import com.example.kasui.ui.ViaodaLibre
+import com.example.kasui.viewmodels.TopBarViewModel
 
 
 @Composable
 fun TopBar(){
-    var headingText by remember { mutableStateOf("Kasui") }
-    var fontSize by remember { mutableIntStateOf(72) }
-    val animatedFont = animateIntAsState(fontSize)
+
+    val topBarViewModel: TopBarViewModel = viewModel()
+
+    val navState by topBarViewModel.navState.collectAsStateWithLifecycle()
+
+    val headingText by remember (navState){
+        mutableStateOf(
+        when(navState){
+
+            NavState.SEARCH -> "Search"
+            else -> "Kansui"
+        }
+        )
+    }
+
+
 
     // MAIN PAGE
     Row(modifier = Modifier.fillMaxWidth()
         .clickable(
             interactionSource = null,
             indication = null,onClick = {
-            if (headingText == "Kasui"){
-                headingText = "Search"
-                fontSize = 52
-            }else{
-                headingText = "Kasui"
-                fontSize = 72
-            }
+
         })
     )
     {
 
         Text(
-
             headingText,
             fontFamily = ViaodaLibre,
            // fontSize = animatedFont.value.sp,
             letterSpacing = -4.sp,
-            style = TextStyle(textMotion = TextMotion.Animated, fontSize = animatedFont.value.sp)
+            style = TextStyle(textMotion = TextMotion.Animated, fontSize = 72.sp)
         )
 
     }

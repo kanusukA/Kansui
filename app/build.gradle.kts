@@ -68,5 +68,6 @@ dependencies {
    // implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.foundation)
+    implementation(libs.androidx.lifecycle.viewmodel.compose)
 
 }

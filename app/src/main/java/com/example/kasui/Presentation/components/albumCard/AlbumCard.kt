@@ -1,41 +1,88 @@
 package com.example.kasui.Presentation.components.albumCard
 
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.Indication
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.kasui.Presentation.components.Selectable
 import com.example.kasui.R
+import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.UncutSans
+import com.example.kasui.ui.ViaodaLibre
+import com.example.kasui.ui.textColor
+import com.example.kasui.ui.variantColor
 
 @Composable
 fun AlbumCard(
 //    albumName: String,
 //    artistName: String,
 //    image: Int
-
+//    onSelected: (Boolean) -> Unit
+//    onClickSelection: Boolean
 ){
+//    val selectable by remember { mutableStateOf(Selectable(selected = true, selectionIndex = 2)) }
+
+    var selected by remember { mutableStateOf(false) }
+    var selectionIndex by remember { mutableIntStateOf(2) }
+
+    val animatedSelectionColor = animateColorAsState(if (selected) TitleColor.copy(alpha = 0.35f)else Color.Transparent)
+
     Box (
         modifier = Modifier
             .requiredSize(170.dp)
+            .combinedClickable(
+                interactionSource = null,
+                indication = null,
+                onLongClick = {
+                    selected = !selected
+                },
+                onClick = {
+
+                }
+            )
+
     ){
         Box(
             modifier = Modifier
@@ -43,11 +90,33 @@ fun AlbumCard(
                 .requiredSize(160.dp)
                 .background(Color.Transparent, shape = RoundedCornerShape(24.dp))
                 .clip(shape = RoundedCornerShape(size = 24.dp))
+                .graphicsLayer(
+                    colorFilter = ColorFilter.tint(
+                        animatedSelectionColor.value,
+                        blendMode = BlendMode.Plus
+                    )
+                )
+
         ) {
             Image(painterResource(R.drawable.cover),
                 contentScale = ContentScale.FillBounds,
                 contentDescription = null)
 
+        }
+        AnimatedVisibility(modifier = Modifier
+            .align(Alignment.TopEnd)
+            .padding(12.dp),
+            visible = selected,
+            enter = fadeIn() + scaleIn(),
+            exit = fadeOut() + scaleOut()
+        ) {
+            Box(modifier = Modifier.size(28.dp).background(color = variantColor.copy(alpha = 0.75f), shape = CircleShape), contentAlignment = Alignment.Center) {
+                Text("$selectionIndex", fontFamily = ViaodaLibre,
+                    fontSize = 18.sp,
+                    color = textColor
+
+                    )
+            }
         }
         Column (
             modifier = Modifier.align(Alignment.BottomStart)
@@ -56,15 +125,17 @@ fun AlbumCard(
                 text = "Long Nights and Wasted Affairs",
                 fontFamily = UncutSans,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 12.sp,
-                color = Color.White.copy(alpha = 0.8f)
-
+                fontSize = 16.sp,
+                color = Color.White.copy(alpha = 0.85f),
+                style = TextStyle(shadow = Shadow(Color.White, Offset(x = 2f,y=2f), blurRadius = 8f))
             )
             Text(text = "Mind's Eye",
                 fontFamily = UncutSans,
                 fontWeight = FontWeight.Light,
-                fontSize = 10.sp,
-                color = Color.White.copy(alpha = 0.75f)
+                fontSize = 14.sp,
+                color = Color.White,
+                style = TextStyle(shadow = Shadow(Color.White, Offset(x = 2f,y=2f), blurRadius = 2f))
+
                 )
             Spacer(modifier = Modifier.height(2.dp))
         }

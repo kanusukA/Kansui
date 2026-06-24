@@ -1,6 +1,7 @@
 package com.example.kasui.Presentation.components.albumCard
 
 
+import android.net.Uri
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.fadeIn
@@ -46,6 +47,10 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.Bitmap
+import coil3.compose.AsyncImage
+import coil3.toCoilUri
+import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.Presentation.components.Selectable
 import com.example.kasui.R
 import com.example.kasui.ui.TitleColor
@@ -56,20 +61,21 @@ import com.example.kasui.ui.variantColor
 
 @Composable
 fun AlbumCard(
-//    albumName: String,
-//    artistName: String,
-//    image: Int
-//    onSelected: (Boolean) -> Unit
-//    onClickSelection: Boolean
-){
+    albumName: String,
+    artistName: String,
+    artwork: Artwork?,
+    onSelected: (Boolean) -> Unit,
+    onClickSelection: Boolean
+) {
 //    val selectable by remember { mutableStateOf(Selectable(selected = true, selectionIndex = 2)) }
 
     var selected by remember { mutableStateOf(false) }
     var selectionIndex by remember { mutableIntStateOf(2) }
 
-    val animatedSelectionColor = animateColorAsState(if (selected) TitleColor.copy(alpha = 0.35f)else Color.Transparent)
+    val animatedSelectionColor =
+        animateColorAsState(if (selected) TitleColor.copy(alpha = 0.35f) else Color.Transparent)
 
-    Box (
+    Box(
         modifier = Modifier
             .requiredSize(170.dp)
             .combinedClickable(
@@ -83,7 +89,7 @@ fun AlbumCard(
                 }
             )
 
-    ){
+    ) {
         Box(
             modifier = Modifier
                 .align(Alignment.Center)
@@ -98,45 +104,69 @@ fun AlbumCard(
                 )
 
         ) {
-            Image(painterResource(R.drawable.cover),
-                contentScale = ContentScale.FillBounds,
-                contentDescription = null)
+            AsyncImage(
+                modifier = Modifier.size(170.dp),
+                model = artwork?.bitmap,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                clipToBounds = true,
+            )
 
         }
-        AnimatedVisibility(modifier = Modifier
-            .align(Alignment.TopEnd)
-            .padding(12.dp),
+        AnimatedVisibility(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(12.dp),
             visible = selected,
             enter = fadeIn() + scaleIn(),
             exit = fadeOut() + scaleOut()
         ) {
-            Box(modifier = Modifier.size(28.dp).background(color = variantColor.copy(alpha = 0.75f), shape = CircleShape), contentAlignment = Alignment.Center) {
-                Text("$selectionIndex", fontFamily = ViaodaLibre,
+            Box(
+                modifier = Modifier
+                    .size(28.dp)
+                    .background(color = variantColor.copy(alpha = 0.75f), shape = CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "$selectionIndex", fontFamily = ViaodaLibre,
                     fontSize = 18.sp,
                     color = textColor
 
-                    )
+                )
             }
         }
-        Column (
+        Column(
             modifier = Modifier.align(Alignment.BottomStart)
-        ){
+        ) {
             Text(
-                text = "Long Nights and Wasted Affairs",
+                text = albumName,
                 fontFamily = UncutSans,
                 fontWeight = FontWeight.SemiBold,
-                fontSize = 16.sp,
-                color = Color.White.copy(alpha = 0.85f),
-                style = TextStyle(shadow = Shadow(Color.White, Offset(x = 2f,y=2f), blurRadius = 8f))
+                fontSize = 14.sp,
+                color = artwork?.textColor1 ?: textColor,
+                style = TextStyle(
+                    shadow = Shadow(
+                        artwork?.textColor2 ?: Color.White,
+                        Offset(x = 2f, y = 2f),
+                        blurRadius = 4f
+                    )
+                )
             )
-            Text(text = "Mind's Eye",
+            Text(
+                text = artistName,
                 fontFamily = UncutSans,
                 fontWeight = FontWeight.Light,
-                fontSize = 14.sp,
-                color = Color.White,
-                style = TextStyle(shadow = Shadow(Color.White, Offset(x = 2f,y=2f), blurRadius = 2f))
-
+                fontSize = 12.sp,
+                color = artwork?.textColor1 ?: textColor,
+                style = TextStyle(
+                    shadow = Shadow(
+                        artwork?.textColor2 ?: Color.White,
+                        Offset(x = 2f, y = 2f),
+                        blurRadius = 2f
+                    )
                 )
+
+            )
             Spacer(modifier = Modifier.height(2.dp))
         }
     }
@@ -145,6 +175,6 @@ fun AlbumCard(
 
 @Preview
 @Composable
-fun previewAlbumCard(){
-    AlbumCard()
+fun previewAlbumCard() {
+    // AlbumCard()
 }

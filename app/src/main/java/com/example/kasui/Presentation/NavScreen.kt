@@ -28,8 +28,13 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import com.example.kasui.Presentation.components.bottomBar.BottomBar
 import com.example.kasui.Presentation.components.topBar.TopBar
+import com.example.kasui.Presentation.screens.home.AlbumScreen
 import com.example.kasui.Presentation.screens.home.HomeScreen
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.surfaceColor
@@ -39,7 +44,11 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun NavScreen() {
 
+    val navController = rememberNavController()
+
     val lazyState = rememberLazyGridState()
+
+    val navState by NavManager.navStates.collectAsStateWithLifecycle()
 
     val isScrolledPastFirstItem by remember {
         derivedStateOf { lazyState.firstVisibleItemIndex > 0 }
@@ -50,15 +59,39 @@ fun NavScreen() {
         animationSpec = tween(durationMillis = 400, delayMillis = 0)
     )
 
+    LaunchedEffect(navState) {
+        when (navState) {
+            NavState.HOME -> navController.navigate("Home")
+            NavState.SEARCH -> navController.navigate("Search")
+            NavState.LIBRARY -> navController.navigate("Library")
+        }
+    }
+
 
     Surface(
         modifier = Modifier.fillMaxSize(),
         color = surfaceColor
     ) {
+
         Box(modifier = Modifier.fillMaxSize()) {
-            HomeScreen(
-                lazyState
-            )
+            NavHost(
+                navController = navController,
+                startDestination = "Home" // Define the initial screen
+            ) {
+                // Home Screen Destination
+                composable(route = "Home"){
+                    HomeScreen(
+                        lazyState
+                    )
+                }
+
+                // Profile Screen Destination with Arguments
+                composable(route = "Album") { backStackEntry ->
+                    // Reconstruct the typed object from the back stack entry
+                    AlbumScreen()
+                }
+            }
+
 
             topBottomGradient(
                 intensityTop = animTopGradientIntensity.value

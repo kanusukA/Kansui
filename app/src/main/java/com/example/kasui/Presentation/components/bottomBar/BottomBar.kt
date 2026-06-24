@@ -205,7 +205,7 @@ private fun BottomBarTab(
                 Text(
                     modifier = Modifier.padding(end = 16.dp),
                     text = title,
-                    fontFamily = UncutSans,
+                    fontFamily = ViaodaLibre,
                     fontWeight = FontWeight.Bold,
                     fontSize = 20.sp,
                     color = TitleColor

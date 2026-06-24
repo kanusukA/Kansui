@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kasui.Data.request.MediaManagerState
 import com.example.kasui.Presentation.NavState
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.ViaodaLibre
@@ -40,19 +41,27 @@ fun TopBar(
     val topBarViewModel: TopBarViewModel = viewModel()
 
     val navState by topBarViewModel.navState.collectAsStateWithLifecycle()
+    val mediaState by topBarViewModel.mediaState.collectAsStateWithLifecycle()
 
-    val headingText by remember(navState) {
+    val headingText by remember(navState,mediaState) {
         mutableStateOf(
-            when (navState) {
+            if (mediaState == MediaManagerState.LOADING_RAW){
+                "Loading"
+            }else{
+                when (navState) {
 
-                NavState.SEARCH -> "Search"
-                else -> "Kansui"
+                    NavState.SEARCH -> "Search"
+                    else -> "Kansui"
+                }
             }
+
         )
     }
 
 
     val animatedVisibility = remember { Animatable(TitleColor) }
+
+
 
     LaunchedEffect(visibility) {
         if (!visibility){

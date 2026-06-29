@@ -64,13 +64,13 @@ fun AlbumCard(
     albumName: String,
     artistName: String,
     artwork: Artwork?,
+    onClick: () -> Unit = {},
+    selected: Boolean = false,
     onSelected: (Boolean) -> Unit,
-    onClickSelection: Boolean
+    onClickSelection: Boolean,
+    selectionCount: Int = 0,
 ) {
-//    val selectable by remember { mutableStateOf(Selectable(selected = true, selectionIndex = 2)) }
 
-    var selected by remember { mutableStateOf(false) }
-    var selectionIndex by remember { mutableIntStateOf(2) }
 
     val animatedSelectionColor =
         animateColorAsState(if (selected) TitleColor.copy(alpha = 0.35f) else Color.Transparent)
@@ -82,10 +82,14 @@ fun AlbumCard(
                 interactionSource = null,
                 indication = null,
                 onLongClick = {
-                    selected = !selected
+                    onSelected(selected)
                 },
                 onClick = {
-
+                    if (onClickSelection) {
+                        onSelected(selected)
+                    } else {
+                        onClick()
+                    }
                 }
             )
 
@@ -128,7 +132,7 @@ fun AlbumCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "$selectionIndex", fontFamily = ViaodaLibre,
+                    "$selectionCount", fontFamily = ViaodaLibre,
                     fontSize = 18.sp,
                     color = textColor
 

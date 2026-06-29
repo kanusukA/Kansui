@@ -18,6 +18,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
@@ -30,7 +31,10 @@ import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.R
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.surfaceColor
+import com.example.kasui.ui.surfaceHighestColor
+
 import com.example.kasui.ui.surfaceVariantColor
+import com.example.kasui.ui.textColor
 import com.example.kasui.ui.textOnSurface
 import com.example.kasui.ui.variantColor
 
@@ -39,6 +43,7 @@ fun SongCard(
     title: String,
     album: String,
     artist: String,
+    albumView: Boolean = false,
     artwork: Artwork?
 ) {
 
@@ -46,7 +51,11 @@ fun SongCard(
         modifier = Modifier
             .fillMaxWidth()
             .requiredHeight(64.dp)
-            .background(color = variantColor, shape = RoundedCornerShape(22.dp)),
+            .background(
+                brush = Brush.horizontalGradient(
+                    listOf(artwork?.bgColor ?: surfaceHighestColor, surfaceColor.copy(alpha = 0.55f), surfaceColor.copy(alpha = 0.65f))
+                ), shape = RoundedCornerShape(22.dp)
+            ),
         verticalAlignment = Alignment.CenterVertically,
 
         ) {
@@ -56,7 +65,7 @@ fun SongCard(
                 .size(56.dp)
                 .clip(shape = RoundedCornerShape(18.dp))
         ) {
-           // Image(painterResource(R.drawable.cover),contentDescription = null)
+            // Image(painterResource(R.drawable.cover),contentDescription = null)
             AsyncImage(
                 modifier = Modifier.size(72.dp),
                 model = artwork?.bitmap,
@@ -67,28 +76,30 @@ fun SongCard(
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly) {
+        Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly, horizontalAlignment = Alignment.Start) {
             Text(
-                "astrology girl",
+                title,
                 fontFamily = UncutSans,
                 fontSize = 18.sp,
-                color = textOnSurface,
-                fontWeight = FontWeight.Black
+                color = textColor,
+                fontWeight = FontWeight.Medium
             )
-            Text(
-                "Long Night and Wasted Affairs",
-                fontFamily = UncutSans,
-                fontSize = 14.sp,
-                color = textOnSurface,
-                fontWeight = FontWeight.Black
-            )
-            Text(
-                "Mind's Eye",
-                fontFamily = UncutSans,
-                fontSize = 14.sp,
-                color = textOnSurface,
-                fontWeight = FontWeight.Light
-            )
+            if (!albumView){
+                Text(
+                    album,
+                    fontFamily = UncutSans,
+                    fontSize = 14.sp,
+                    color = textColor,
+                    fontWeight = FontWeight.Medium
+                )
+                Text(
+                    artist,
+                    fontFamily = UncutSans,
+                    fontSize = 14.sp,
+                    color = textColor,
+                    fontWeight = FontWeight.Light
+                )
+            }
         }
     }
 }

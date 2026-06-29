@@ -5,20 +5,22 @@ import android.content.pm.PackageManager
 import android.os.Build
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.TextView
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresExtension
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.kasui.Data.request.MediaManager
+import com.example.kasui.Data.MusicBrainZ.musicBrainz
 import com.example.kasui.Presentation.NavScreen
 import com.example.kasui.databinding.ActivityMainBinding
 import com.example.kasui.viewmodels.MainViewModel
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : AppCompatActivity() {
 
@@ -62,12 +64,50 @@ class MainActivity : AppCompatActivity() {
 
 
 
-
         enableEdgeToEdge()
 
         setContent {
+
             val mainViewModel: MainViewModel = viewModel()
-            
+
+            val coroutineScope = rememberCoroutineScope()
+
+//            LaunchedEffect(Unit) {
+//                delay(1500.milliseconds)
+//                async {
+//                    musicBrainz.searchReleases(
+//                        "I let it in and it took everything", null,
+//                        {
+//                            println("Failed API REQUEST 0")
+//                        },
+//                        { result ->
+//                            if (!result.releases.isNullOrEmpty()) {
+//                                coroutineScope.launch {
+////                                    musicBrainz.getRelease(
+////                                        result.releases.get(1).id,
+////                                        onFailure = {},
+////                                        onSuccess = {}
+////                                    )
+//                                    musicBrainz.getReleaseCover(
+//                                        result.releases.get(1).id,
+//                                        onFailure = {},
+//                                        onSuccess = { coverArtResponse ->
+//                                            println(coverArtResponse)
+//
+//                                        }
+//                                    )
+//
+//                                }
+//
+//
+//                            }
+//
+//
+//                        })
+//                }
+//
+//
+//            }
 
             NavScreen()
         }

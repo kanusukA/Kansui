@@ -1,5 +1,6 @@
 package com.example.kasui.Presentation
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -13,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -46,13 +48,15 @@ fun NavScreen() {
 
     val navController = rememberNavController()
 
-    val lazyState = rememberLazyGridState()
-
     val navState by NavManager.navStates.collectAsStateWithLifecycle()
 
-    val isScrolledPastFirstItem by remember {
-        derivedStateOf { lazyState.firstVisibleItemIndex > 0 }
+    val selectedAlbum by NavManager.selectedAlbum.collectAsStateWithLifecycle()
+
+    var isScrolledPastFirstItem by remember {
+        mutableStateOf(false)
     }
+
+
     val animTopGradientIntensity = animateFloatAsState(
         if (isScrolledPastFirstItem) 1f else 0f,
         visibilityThreshold = 0.001f,
@@ -60,12 +64,21 @@ fun NavScreen() {
     )
 
     LaunchedEffect(navState) {
-        when (navState) {
-            NavState.HOME -> navController.navigate("Home")
-            NavState.SEARCH -> navController.navigate("Search")
-            NavState.LIBRARY -> navController.navigate("Library")
+        println("navChange ${navState.popBack}")
+        if (navState.popBack) {
+            navController.popBackStack()
+        } else {
+            when (navState) {
+                is NavRoutes.Album -> navController.navigate(NavRoutes.Album().route)
+                is NavRoutes.Home -> navController.navigate(NavRoutes.Home().route)
+                is NavRoutes.Library -> navController.navigate(NavRoutes.Library().route)
+                is NavRoutes.Search -> navController.navigate(NavRoutes.Search().route)
+            }
         }
+
     }
+
+
 
 
     Surface(
@@ -76,20 +89,71 @@ fun NavScreen() {
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
-                startDestination = "Home" // Define the initial screen
+                startDestination = NavRoutes.Home().route// Define the initial screen
             ) {
+
                 // Home Screen Destination
-                composable(route = "Home"){
+                composable(route = NavRoutes.Home().route) {
+                    BackHandler(enabled = true) {
+                        println("POP back")
+                        when (navState) {
+                            else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
+                        }
+                    }
                     HomeScreen(
-                        lazyState
+                        scrollPastFirstItem = {
+                            isScrolledPastFirstItem = it
+                        }
                     )
                 }
 
                 // Profile Screen Destination with Arguments
-                composable(route = "Album") { backStackEntry ->
+                composable(route = NavRoutes.Album().route) { backStackEntry ->
+                    BackHandler(enabled = true) {
+                        println("POP back")
+                        when (navState) {
+                            else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
+                        }
+                    }
                     // Reconstruct the typed object from the back stack entry
-                    AlbumScreen()
+                    AlbumScreen(selectedAlbum!!, scrollPastFirstItem = {
+                        isScrolledPastFirstItem = it
+                    })
                 }
+
+                composable(route = NavRoutes.Search().route) {
+                    BackHandler(enabled = true) {
+                        println("POP back")
+                        when (navState) {
+                            else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
+                        }
+                    }
+                    HomeScreen(
+                        scrollPastFirstItem = {
+                            isScrolledPastFirstItem = it
+                        }
+                    )
+                }
+
+                composable(route = NavRoutes.Library().route) {
+                    BackHandler(enabled = true) {
+                        println("POP back")
+                        when (navState) {
+                            else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
+                        }
+                    }
+                    HomeScreen(
+                        scrollPastFirstItem = {
+                            isScrolledPastFirstItem = it
+                        }
+                    )
+                }
+//
+//                composable(route = NavRoutes.Home().route) {
+//                    HomeScreen(
+//                        lazyState
+//                    )
+//                }
             }
 
 

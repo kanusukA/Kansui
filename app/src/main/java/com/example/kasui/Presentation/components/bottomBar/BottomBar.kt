@@ -3,6 +3,8 @@ package com.example.kasui.Presentation.components.bottomBar
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.EaseIn
 import androidx.compose.animation.core.EaseInBounce
 import androidx.compose.animation.core.EaseInOut
@@ -10,6 +12,12 @@ import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -31,6 +39,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
+import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
@@ -47,6 +56,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.onKeyEvent
@@ -62,6 +72,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.NavState
 
 import com.example.kasui.R
@@ -69,6 +80,7 @@ import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
+import com.example.kasui.ui.customs.Krow
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.surfaceHighColor
 import com.example.kasui.ui.surfaceHighestColor
@@ -93,13 +105,38 @@ fun BottomBar(
     var onHold by remember { mutableStateOf(false) }
     var dragPositionY by remember { mutableFloatStateOf(0f) }
 
+    var backButtonSize by remember {
+        mutableStateOf(42.dp)
+    }
 
-    Row(
+    val animBackBtn = animateDpAsState(backButtonSize)
+
+    val showBackTab by remember(navState) {
+        mutableStateOf(
+            when (navState) {
+                is NavRoutes.Album -> {
+
+                    true
+                }
+
+                else -> false
+            }
+        )
+    }
+    LaunchedEffect(showBackTab) {
+        if (showBackTab) {
+            backButtonSize = 42.dp
+        } else {
+            println("scale low")
+            backButtonSize = 0.dp
+        }
+    }
+
+    Krow(
         modifier = modifier
-            .fillMaxWidth()
-            .requiredHeight(60.dp)
-            .background(surfaceHighColor, shape = CircleShape)
-
+            .requiredHeight(56.dp)
+            .clip(shape = CircleShape)
+            .background(surfaceHighColor.copy(alpha = 0.85f), shape = CircleShape)
             .pointerInput(Unit) {
 
                 detectDragGesturesAfterLongPress(
@@ -115,30 +152,70 @@ fun BottomBar(
                 )
 
             },
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.SpaceEvenly
+        hiddenComposable = {
+
+            BottomBarTab(
+                modifier = Modifier,
+                R.drawable.arrow_back, "Back", true,
+                onHold = onHold,
+                dragPositionY,
+                onClick = {
+                    bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true))
+                })
+        },
+        visible = showBackTab,
+        exitTransition = slideOutHorizontally(
+            targetOffsetX = { it },
+            animationSpec = tween(durationMillis = 2000)
+        )
+
     ) {
+//        Spacer(modifier = Modifier.width(48.dp))
         BottomBarTab(
-            R.drawable.home, "Home", navState == NavState.HOME,
+
+            icon = R.drawable.home,
+            title = "Home",
+            selected = navState.navRoute == NavRoutes.Home().route,
             onHold = onHold,
-            dragPositionY,
-            onClick = { bottomBarViewModel.onChangeNavState(NavState.HOME) })
+            dragPositionY = dragPositionY,
+            onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Home()) })
+
         BottomBarTab(
-            R.drawable.search, "Search", navState == NavState.SEARCH,
+            icon = R.drawable.search,
+            title = "Search",
+            selected = navState.navRoute == NavRoutes.Search().route,
             onHold = onHold,
-            dragPositionY,
-            onClick = { bottomBarViewModel.onChangeNavState(NavState.SEARCH) })
+            dragPositionY = dragPositionY,
+            onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Search()) })
+
         BottomBarTab(
-            R.drawable.library, "Library", navState == NavState.LIBRARY,
+            icon = R.drawable.library,
+            title = "Library",
+            selected = navState.navRoute == NavRoutes.Library().route,
             onHold = onHold,
-            dragPositionY,
-            onClick = { bottomBarViewModel.onChangeNavState(NavState.LIBRARY) })
+            dragPositionY = dragPositionY,
+            onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Library()) })
+
+
+//        AnimatedVisibility(
+//            showBackTab,
+//            enter = scaleIn() + slideInHorizontally(
+//                initialOffsetX = { it }),
+//            exit = scaleOut() + slideOutHorizontally(targetOffsetX = { it })
+//        ) {
+//            BottomBarTab(
+//                R.drawable.arrow_back, "Back", true,
+//                onHold = onHold,
+//                dragPositionY,
+//                onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true)) })
+//        }
     }
 
 }
 
 @Composable
 private fun BottomBarTab(
+    modifier: Modifier = Modifier,
     icon: Int,
     title: String,
     selected: Boolean,
@@ -155,7 +232,7 @@ private fun BottomBarTab(
         animationSpec = tween(easing = EaseIn)
     )
 
-    var itemPosWidth by remember { mutableStateOf(Offset(0f,0f)) }
+    var itemPosWidth by remember { mutableStateOf(Offset(0f, 0f)) }
 
     val onDragSelected by remember(dragPositionY) {
         derivedStateOf {
@@ -163,19 +240,22 @@ private fun BottomBarTab(
         }
     }
     LaunchedEffect(onDragSelected) {
-        if (onDragSelected){
+        if (onDragSelected) {
             onClick()
         }
     }
 
     val animatedDragPosition = animateDpAsState(if (onDragSelected && onHold) 24.dp else 0.dp)
 
-    Box() {
+    Box(modifier = modifier.requiredHeight(42.dp)) {
         Row(
             modifier = Modifier
-                .offset(0.dp,-animatedDragPosition.value)
+                .offset(0.dp, -animatedDragPosition.value)
                 .onPlaced({
-                    itemPosWidth = Offset(it.positionOnScreen().x,it.positionOnScreen().x + it.size.width.toFloat())
+                    itemPosWidth = Offset(
+                        it.positionOnScreen().x,
+                        it.positionOnScreen().x + it.size.width.toFloat()
+                    )
 
                 })
                 .clip(shape = CircleShape)
@@ -194,7 +274,7 @@ private fun BottomBarTab(
         ) {
             Box(
                 Modifier
-                    .size(48.dp),
+                    .size(42.dp),
 
                 //            .background(color = surfaceColor, shape = CircleShape),
                 contentAlignment = Alignment.Center
@@ -207,7 +287,7 @@ private fun BottomBarTab(
                     text = title,
                     fontFamily = ViaodaLibre,
                     fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp,
+                    fontSize = 18.sp,
                     color = TitleColor
                 )
             }

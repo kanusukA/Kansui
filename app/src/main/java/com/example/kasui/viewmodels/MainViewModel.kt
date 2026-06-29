@@ -15,6 +15,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     init {
         viewModelScope.launch(Dispatchers.IO) {
             MediaManager.fetchMusicFiles(application.applicationContext)
+            MediaManager.syncAlbumLibraryWithMusicBrainZ()
         }
     }
 }

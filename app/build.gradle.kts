@@ -4,6 +4,14 @@ plugins {
 }
 
 android {
+    signingConfigs {
+        create("release") {
+            storeFile = file("C:\\Users\\lenovo\\AndroidAppKeys\\Kansui_key.jks")
+            storePassword = "Kansui"
+            keyAlias = "key0"
+            keyPassword = "Kansui"
+        }
+    }
     namespace = "com.example.kasui"
     compileSdk {
         version = release(36) {
@@ -28,6 +36,7 @@ android {
 
     buildTypes {
         release {
+            signingConfig = signingConfigs.getByName("release")
             optimization {
                 enable = false
             }
@@ -75,5 +84,10 @@ dependencies {
 
     // Navigation
     implementation(libs.androidx.navigation.compose)
+
+    //Network
+    implementation(libs.retrofit)
+    implementation(libs.retrofit2.converter.gson)
+    implementation(libs.okhttp)
 
 }

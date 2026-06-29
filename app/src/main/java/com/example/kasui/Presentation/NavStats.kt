@@ -14,23 +14,42 @@ enum class NavState {
     ALBUM
 }
 
+sealed class NavRoutes(
+    val popBack: Boolean = false,
+    val navRoute: String
+) {
+    data class Home(val route: String = "Home", val popBackStack: Boolean = false) :
+        NavRoutes(popBackStack, navRoute = route)
+
+    data class Search(val route: String = "Search", val popBackStack: Boolean = false) :
+        NavRoutes(popBackStack, navRoute = route)
+
+    data class Library(val route: String = "Library", val popBackStack: Boolean = false) :
+        NavRoutes(popBackStack, navRoute = route)
+
+    data class Album(val route: String = "Album", val popBackStack: Boolean = false) :
+        NavRoutes(popBackStack, navRoute = route)
+}
+
 object NavManager {
-    private var _navStates: MutableStateFlow<NavState> = MutableStateFlow(NavState.HOME)
-    val navStates: StateFlow<NavState> = _navStates
+    private var _navStates: MutableStateFlow<NavRoutes> = MutableStateFlow(NavRoutes.Home())
+    val navStates: StateFlow<NavRoutes> = _navStates
 
-    val selectedAlbum: MutableStateFlow<Album?> = MutableStateFlow(null)
-    var _selectedAlbum = selectedAlbum.asStateFlow()
 
-    fun changeNavState(state: NavState) {
-        if (state == NavState.ALBUM && selectedAlbum.value == null) {
+    private var _selectedAlbum: MutableStateFlow<Album?> = MutableStateFlow(null)
+    val selectedAlbum = _selectedAlbum.asStateFlow()
+
+    fun changeNavState(state: NavRoutes) {
+        if (state == NavRoutes.Album() && selectedAlbum.value == null) {
             throw Exception("ALBUM VIEW SELECTED WITHOUT A ALBUM TO SHOW!")
         }
         _navStates.update { state }
     }
 
     fun navToAlbumView(album: Album) {
-        selectedAlbum.update { album }
-        changeNavState(NavState.ALBUM)
+        _selectedAlbum.update { album }
+        changeNavState(NavRoutes.Album())
     }
 
 }
+

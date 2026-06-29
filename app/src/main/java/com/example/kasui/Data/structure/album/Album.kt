@@ -7,8 +7,8 @@ class Album(
     val id: Long,
     val href: String,
     val albumAttributes: AlbumAttributes,
-    val albumRelationships: AlbumRelationships,
-    val albumViews: AlbumViews
+    val albumRelationships: AlbumRelationships?,
+    val albumViews: AlbumViews?
 ) {
 }
 
@@ -22,16 +22,16 @@ data class AlbumAttributes(
     val isCompilation: Boolean,
     val isComplete: Boolean,
     val url: String,
-    val trackCount: Int,
+    var trackCount: Int,
 
     //Maybe
-    val audioVariants: List<String>?,
-    val artistUrl: String?,
-    val contentRating: String?,
-    val editorialNotes: EditorialNotes?,
-    val inFavorites: Boolean?,
-    val recordLabel: String?,
-    val releaseDate: String?,
+    val audioVariants: List<String>? = null,
+    val artistUrl: String? = null,
+    val contentRating: String? = null,
+    val editorialNotes: EditorialNotes? = null,
+    val inFavorites: Boolean? = null,
+    val recordLabel: String? = null,
+    val releaseDate: String? = null,
 
     )
 

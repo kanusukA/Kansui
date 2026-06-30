@@ -19,3 +19,7 @@ val UncutSans = FontFamily(
     Font(R.font.uncut_light, weight = FontWeight.Light),
 )
 
+val interlope = FontFamily(
+    Font(R.font.interlope_main)
+)
+

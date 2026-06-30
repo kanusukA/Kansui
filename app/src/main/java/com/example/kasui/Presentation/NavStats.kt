@@ -29,10 +29,27 @@ sealed class NavRoutes(
 
     data class Album(val route: String = "Album", val popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
+
+    data class WelcomeLogin(
+        val route: String = "Welcome",
+        val popBackStack: Boolean = false,
+    ) :
+        NavRoutes(popBackStack, navRoute = route)
+
+    data class WelcomeSetupAlbum(
+        val route: String = "Welcome",
+        val popBackStack: Boolean = false,
+    ) :
+        NavRoutes(popBackStack, navRoute = route)
+}
+
+enum class WelcomeNavStage {
+    LOGIN,
+    SETUP
 }
 
 object NavManager {
-    private var _navStates: MutableStateFlow<NavRoutes> = MutableStateFlow(NavRoutes.Home())
+    private var _navStates: MutableStateFlow<NavRoutes> = MutableStateFlow(NavRoutes.WelcomeLogin())
     val navStates: StateFlow<NavRoutes> = _navStates
 
 

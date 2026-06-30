@@ -110,7 +110,7 @@ fun AlbumCard(
         ) {
             AsyncImage(
                 modifier = Modifier.size(170.dp),
-                model = artwork?.bitmap,
+                model = artwork?.bitmap ?: R.drawable.cover,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 clipToBounds = true,

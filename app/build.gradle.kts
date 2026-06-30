@@ -86,8 +86,11 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
 
     //Network
-    implementation(libs.retrofit)
+    //implementation(libs.retrofit)
     implementation(libs.retrofit2.converter.gson)
     implementation(libs.okhttp)
+
+    // SAVE SESSION
+    implementation(libs.androidx.datastore.preferences)
 
 }

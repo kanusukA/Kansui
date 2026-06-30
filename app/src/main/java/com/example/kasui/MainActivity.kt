@@ -15,6 +15,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kasui.Data.MusicBrainZ.musicBrainz
 import com.example.kasui.Presentation.NavScreen
+import com.example.kasui.Presentation.screens.home.WelcomeScreen
 import com.example.kasui.databinding.ActivityMainBinding
 import com.example.kasui.viewmodels.MainViewModel
 import kotlinx.coroutines.async
@@ -70,6 +71,10 @@ class MainActivity : AppCompatActivity() {
 
             val mainViewModel: MainViewModel = viewModel()
 
+            LaunchedEffect(Unit) {
+                mainViewModel.initMain()
+            }
+
             val coroutineScope = rememberCoroutineScope()
 
 //            LaunchedEffect(Unit) {
@@ -108,7 +113,7 @@ class MainActivity : AppCompatActivity() {
 //
 //
 //            }
-
+            //WelcomeScreen()
             NavScreen()
         }
 

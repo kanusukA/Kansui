@@ -1,6 +1,8 @@
 package com.example.kasui.Presentation
 
+import android.os.Build
 import androidx.activity.compose.BackHandler
+import androidx.annotation.RequiresExtension
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -34,15 +36,18 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import com.example.kasui.Presentation.NavRoutes.*
 import com.example.kasui.Presentation.components.bottomBar.BottomBar
 import com.example.kasui.Presentation.components.topBar.TopBar
 import com.example.kasui.Presentation.screens.home.AlbumScreen
 import com.example.kasui.Presentation.screens.home.HomeScreen
+import com.example.kasui.Presentation.screens.home.WelcomeScreen
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.surfaceColor
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
+@RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 15)
 @Composable
 fun NavScreen() {
 
@@ -69,10 +74,11 @@ fun NavScreen() {
             navController.popBackStack()
         } else {
             when (navState) {
-                is NavRoutes.Album -> navController.navigate(NavRoutes.Album().route)
-                is NavRoutes.Home -> navController.navigate(NavRoutes.Home().route)
-                is NavRoutes.Library -> navController.navigate(NavRoutes.Library().route)
-                is NavRoutes.Search -> navController.navigate(NavRoutes.Search().route)
+                is Album -> navController.navigate(Album().route)
+                is Home -> navController.navigate(Home().route)
+                is Library -> navController.navigate(Library().route)
+                is Search -> navController.navigate(Search().route)
+                else -> {}
             }
         }
 
@@ -89,8 +95,16 @@ fun NavScreen() {
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
-                startDestination = NavRoutes.Home().route// Define the initial screen
+                startDestination = NavRoutes.WelcomeLogin().route// Define the initial screen
             ) {
+
+                composable(route = NavRoutes.WelcomeLogin().route) {
+                    WelcomeScreen(
+                        scrollPastFirstItem = {
+                            isScrolledPastFirstItem = it
+                        }
+                    )
+                }
 
                 // Home Screen Destination
                 composable(route = NavRoutes.Home().route) {
@@ -211,5 +225,5 @@ private fun topBottomGradient(
 @Preview
 @Composable
 fun previewNavScreen() {
-    NavScreen()
+   // NavScreen()
 }

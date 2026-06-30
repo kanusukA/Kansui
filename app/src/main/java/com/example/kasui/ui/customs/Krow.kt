@@ -35,6 +35,7 @@ fun Krow(
     modifier: Modifier,
     hiddenComposable: @Composable () -> Unit = {},
     visible: Boolean = false,
+    hidden: Boolean = false,
     entry: EnterTransition = scaleIn() + slideInHorizontally(
         initialOffsetX = { it }),
     exitTransition: ExitTransition = scaleOut() + slideOutHorizontally(targetOffsetX = { it }),
@@ -108,11 +109,17 @@ fun Krow(
         var rowHeight = 0
 
         placeables.forEachIndexed { index, placeable ->
-            if (index == 3 && !visible) {
-                items = 4f
-                rowHeight = max(rowHeight, placeable.height)
+            if (hidden) {
+                if (index == 3 && !visible) {
+                    items = placeables.size.toFloat() + 1
+                    rowHeight = max(rowHeight, placeable.height)
+                } else {
+                    items = placeables.size.toFloat() + 2
+                    rowWidth += placeable.width
+                    rowHeight = max(rowHeight, placeable.height)
+                }
             } else {
-                items = 5f
+                items = placeables.size.toFloat() + 1
                 rowWidth += placeable.width
                 rowHeight = max(rowHeight, placeable.height)
             }

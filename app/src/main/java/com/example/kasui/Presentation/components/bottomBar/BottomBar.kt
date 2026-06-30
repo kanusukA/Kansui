@@ -74,6 +74,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.NavState
+import com.example.kasui.Presentation.WelcomeNavStage
 
 import com.example.kasui.R
 import com.example.kasui.ui.TitleColor
@@ -115,7 +116,6 @@ fun BottomBar(
         mutableStateOf(
             when (navState) {
                 is NavRoutes.Album -> {
-
                     true
                 }
 
@@ -131,6 +131,83 @@ fun BottomBar(
             backButtonSize = 0.dp
         }
     }
+
+    @Composable
+    fun HomeScreenTabs() {
+        BottomBarTab(
+            icon = R.drawable.home,
+            title = "Home",
+            selected = navState.navRoute == NavRoutes.Home().route,
+            onHold = onHold,
+            dragPositionY = dragPositionY,
+            onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Home()) })
+
+        BottomBarTab(
+            icon = R.drawable.search,
+            title = "Search",
+            selected = navState.navRoute == NavRoutes.Search().route,
+            onHold = onHold,
+            dragPositionY = dragPositionY,
+            onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Search()) })
+
+        BottomBarTab(
+            icon = R.drawable.library,
+            title = "Library",
+            selected = navState.navRoute == NavRoutes.Library().route,
+            onHold = onHold,
+            dragPositionY = dragPositionY,
+            onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Library()) })
+    }
+
+    @Composable
+    fun WelcomeScreenTabs() {
+        if (navState.navRoute == NavRoutes.WelcomeLogin().route) {
+
+            when (navState) {
+
+
+                is NavRoutes.WelcomeSetupAlbum -> {
+                    BottomBarTab(
+                        icon = null,
+                        title = "Back",
+                        selected = true,
+                        onHold = onHold,
+                        dragPositionY = dragPositionY,
+                        onClick = { })
+
+                    BottomBarTab(
+                        icon = null,
+                        title = "Select",
+                        selected = true,
+                        onHold = onHold,
+                        dragPositionY = dragPositionY,
+                        onClick = { })
+                }
+
+                is NavRoutes.WelcomeLogin -> {
+                    BottomBarTab(
+                        icon = null,
+                        title = "Sign Up",
+                        selected = true,
+                        onHold = onHold,
+                        dragPositionY = dragPositionY,
+                        onClick = { })
+                    BottomBarTab(
+                        icon = null,
+                        title = "Sign In",
+                        selected = true,
+                        onHold = onHold,
+                        dragPositionY = dragPositionY,
+                        onClick = { })
+                }
+
+                else -> {}
+            }
+
+        }
+    }
+
+
 
     Krow(
         modifier = modifier
@@ -154,14 +231,16 @@ fun BottomBar(
             },
         hiddenComposable = {
 
-            BottomBarTab(
-                modifier = Modifier,
-                R.drawable.arrow_back, "Back", true,
-                onHold = onHold,
-                dragPositionY,
-                onClick = {
-                    bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true))
-                })
+            if (navState.navRoute != NavRoutes.WelcomeLogin().route) {
+                BottomBarTab(
+                    modifier = Modifier,
+                    R.drawable.arrow_back, "Back", true,
+                    onHold = onHold,
+                    dragPositionY,
+                    onClick = {
+                        bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true))
+                    })
+            }
         },
         visible = showBackTab,
         exitTransition = slideOutHorizontally(
@@ -171,31 +250,11 @@ fun BottomBar(
 
     ) {
 //        Spacer(modifier = Modifier.width(48.dp))
-        BottomBarTab(
+        when (navState.navRoute) {
 
-            icon = R.drawable.home,
-            title = "Home",
-            selected = navState.navRoute == NavRoutes.Home().route,
-            onHold = onHold,
-            dragPositionY = dragPositionY,
-            onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Home()) })
-
-        BottomBarTab(
-            icon = R.drawable.search,
-            title = "Search",
-            selected = navState.navRoute == NavRoutes.Search().route,
-            onHold = onHold,
-            dragPositionY = dragPositionY,
-            onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Search()) })
-
-        BottomBarTab(
-            icon = R.drawable.library,
-            title = "Library",
-            selected = navState.navRoute == NavRoutes.Library().route,
-            onHold = onHold,
-            dragPositionY = dragPositionY,
-            onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Library()) })
-
+            NavRoutes.WelcomeLogin().route -> WelcomeScreenTabs()
+            else -> HomeScreenTabs()
+        }
 
 //        AnimatedVisibility(
 //            showBackTab,
@@ -216,7 +275,7 @@ fun BottomBar(
 @Composable
 private fun BottomBarTab(
     modifier: Modifier = Modifier,
-    icon: Int,
+    icon: Int?,
     title: String,
     selected: Boolean,
     onHold: Boolean,
@@ -226,9 +285,16 @@ private fun BottomBarTab(
 
     val animatedBGColor = animateColorAsState(
         if (selected)
-            surfaceHighestColor
+            variantHighColor
         else
             surfaceColor,
+        animationSpec = tween(easing = EaseIn)
+    )
+    val animatedTextColor = animateColorAsState(
+        if (selected)
+            surfaceHighColor
+        else
+            TitleDarkColor,
         animationSpec = tween(easing = EaseIn)
     )
 
@@ -247,9 +313,10 @@ private fun BottomBarTab(
 
     val animatedDragPosition = animateDpAsState(if (onDragSelected && onHold) 24.dp else 0.dp)
 
-    Box(modifier = modifier.requiredHeight(42.dp)) {
+    Box(modifier = modifier.requiredHeight(42.dp), contentAlignment = Alignment.Center) {
         Row(
             modifier = Modifier
+                .height(42.dp)
                 .offset(0.dp, -animatedDragPosition.value)
                 .onPlaced({
                     itemPosWidth = Offset(
@@ -272,25 +339,33 @@ private fun BottomBarTab(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Box(
-                Modifier
-                    .size(42.dp),
+            Spacer(modifier.width(16.dp))
+            if (icon != null) {
+                Box(
+                    Modifier
+                        .size(42.dp),
 
-                //            .background(color = surfaceColor, shape = CircleShape),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(painterResource(icon), contentDescription = null, tint = TitleColor)
+                    //            .background(color = surfaceColor, shape = CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        painterResource(icon),
+                        contentDescription = null,
+                        tint = animatedTextColor.value
+                    )
+                }
             }
             AnimatedVisibility(selected) {
                 Text(
-                    modifier = Modifier.padding(end = 16.dp),
+                    modifier = Modifier,
                     text = title,
                     fontFamily = ViaodaLibre,
                     fontWeight = FontWeight.Bold,
                     fontSize = 18.sp,
-                    color = TitleColor
+                    color = animatedTextColor.value
                 )
             }
+            Spacer(modifier.width(16.dp))
 
         }
     }

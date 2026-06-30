@@ -38,6 +38,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kasui.Data.request.MediaManagerState
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.NavState
+import com.example.kasui.Presentation.WelcomeNavStage
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.ViaodaLibre
 import com.example.kasui.viewmodels.TopBarViewModel
@@ -54,6 +55,8 @@ fun TopBar(
     val mediaState by topBarViewModel.mediaState.collectAsStateWithLifecycle()
     val selectedAlbum by topBarViewModel.selectedAlbum.collectAsStateWithLifecycle()
 
+    val username by topBarViewModel.username.collectAsStateWithLifecycle()
+
 
     val animatedVisibility = remember { Animatable(TitleColor) }
     val animatedTopPadding =
@@ -65,22 +68,28 @@ fun TopBar(
 
     val headingText by remember(navState, mediaState) {
         mutableStateOf(
-            if (mediaState == MediaManagerState.LOADING_RAW) {
-                "Loading"
-            } else {
-                when (navState) {
-                    is NavRoutes.Album -> {
-                        fontSizeScale = 64f
-                        selectedAlbum?.albumAttributes?.albumName ?: ""
 
-                    }
+            when (navState) {
+                is NavRoutes.Album -> {
+                    fontSizeScale = 64f
+                    selectedAlbum?.albumAttributes?.albumName ?: ""
 
-                    is NavRoutes.Search -> "Search"
-                    else -> {
+                }
+
+                is NavRoutes.Search -> "Search"
+                is NavRoutes.WelcomeLogin -> "Welcome"
+                is NavRoutes.WelcomeSetupAlbum -> "Welcome"
+
+                else -> {
+                    if (mediaState == MediaManagerState.LOADING_RAW) {
+                        "Loading"
+                    } else {
                         fontSizeScale = 85f
                         "Kansui"
                     }
+
                 }
+
             }
 
         )
@@ -125,9 +134,28 @@ fun TopBar(
                 fontSize = animatedFontSizeScale.value.sp,
                 color = animatedVisibility.value,
                 lineHeight = 52.sp
-
             )
         )
+        // WELCOME SUBTEXT
+        AnimatedVisibility(
+            modifier = Modifier.offset(y = -38.dp),
+            visible = navState.navRoute == NavRoutes.WelcomeLogin().route
+        ) {
+            Text(
+
+                text = username,
+                fontFamily = ViaodaLibre,
+                letterSpacing = (-4).sp,
+                style = TextStyle(
+                    textMotion = TextMotion.Animated,
+                    fontSize = 38.sp,
+                    color = animatedVisibility.value,
+                    lineHeight = 48.sp
+
+                )
+            )
+        }
+        // ALBUM SUBTEXT
         AnimatedVisibility(
             modifier = Modifier.offset(y = -38.dp),
             visible = navState.navRoute == NavRoutes.Album().route

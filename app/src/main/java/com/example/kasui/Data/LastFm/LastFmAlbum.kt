@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 class LastFmSearchAlbumResult(
-    val results: List<LastFmSearchAlbum>
+    val results: LastFmSearchAlbum?
 )
 
 @Serializable
@@ -14,7 +14,12 @@ class LastFmSearchAlbum(
     @SerializedName("opensearch:totalResults")
     val total: Int?,
     @SerializedName("albummatches")
-    val albumMatches: List<LastFmSearchAlbumItem>?
+    val albumMatches: LastFmSearchAlbumMatch?
+)
+
+@Serializable
+class LastFmSearchAlbumMatch(
+    val album: List<LastFmSearchAlbumItem>?
 )
 
 @Serializable

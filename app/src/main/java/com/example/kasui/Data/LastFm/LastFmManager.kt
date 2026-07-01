@@ -222,7 +222,7 @@ object LastFmManager {
             if (response.isSuccessful) {
                 val resultJson = response.body.string()
                 println("Result Found : $resultJson")
-                return Gson().fromJson(resultJson, LastFmSearchAlbum::class.java)
+                return Gson().fromJson(resultJson, LastFmSearchAlbumResult::class.java).results
 
             } else {
                 println("LAST ALBUM SEARCH FAILED : ${response.message} \n ${response.code} \n ${response.body.string()} ")

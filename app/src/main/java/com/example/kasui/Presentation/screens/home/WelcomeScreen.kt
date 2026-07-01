@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
@@ -43,7 +44,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kasui.Data.LastFm.LASTFM_STATE
 import com.example.kasui.Data.request.MediaManagerState
+import com.example.kasui.Presentation.NavManager
+import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.components.albumCard.AlbumCard
+import com.example.kasui.Presentation.components.albumCard.LastFmSyncCard
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.UncutSans
@@ -56,10 +60,12 @@ import com.example.kasui.ui.surfaceHighColor
 import com.example.kasui.ui.variantColor
 import com.example.kasui.viewmodels.MainViewModel
 import com.example.kasui.viewmodels.TopBarViewModel
+import com.example.kasui.viewmodels.WelcomeViewmodel
 
 @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 15)
 @Composable
 fun WelcomeScreen(
+    welcomeViewmodel: WelcomeViewmodel,
     scrollPastFirstItem: (Boolean) -> Unit
 ) {
 
@@ -70,8 +76,13 @@ fun WelcomeScreen(
 
     val lastFmState by mainViewModel.lastfmState.collectAsStateWithLifecycle()
     val mediaManagerState by mainViewModel.mediaManagerState.collectAsStateWithLifecycle()
-    val loginUsername by mainViewModel.username.collectAsStateWithLifecycle()
     val rawAlbumList by mainViewModel.rawAlbums.collectAsStateWithLifecycle()
+    val selectedAlbumList by welcomeViewmodel.selectedAlbumsList.collectAsStateWithLifecycle()
+    val selectedSongAlbumList by welcomeViewmodel.selectedSongAlbumList.collectAsStateWithLifecycle()
+
+    val searchResult by welcomeViewmodel.searchAlbum.collectAsStateWithLifecycle()
+
+    val currentNavRoute by NavManager.navStates.collectAsStateWithLifecycle()
 
     val lazyState = rememberLazyGridState()
 
@@ -82,17 +93,6 @@ fun WelcomeScreen(
     LaunchedEffect(isScrolledPastFirstItem) {
         scrollPastFirstItem(isScrolledPastFirstItem)
     }
-
-    // IMPROVE ANIMATIONS
-    val animatedSubTextPos = animateDpAsState(
-        if (isScrolledPastFirstItem) 24.dp else 180.dp,
-        animationSpec = tween(durationMillis = 800, delayMillis = 500)
-    )
-    val animatedSubTextColor =
-        animateColorAsState(if (isScrolledPastFirstItem) variantColor else TitleColor)
-
-
-    val selectedAlbumList = remember { mutableStateListOf<Int>() }
 
     @Composable
     fun loginBody(modifier: Modifier) {
@@ -110,28 +110,28 @@ fun WelcomeScreen(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-//            SentientTextBox(
-//                textFieldValue = username,
-//                labelText = "Username",
-//                labelTextSize = 14,
-//                indentHeight = 16.dp
-//            ) { change ->
-//                username = change
-//
-//            }
-//
-//            Spacer(modifier = Modifier.height(18.dp))
-//
-//            SentientTextBox(
-//                textFieldValue = password,
-//                labelText = "Password",
-//                labelTextSize = 14,
-//                indentHeight = 16.dp,
-//                visualTransformation = PasswordVisualTransformation()
-//            ) { change ->
-//                password = change
-//
-//            }
+            SentientTextBox(
+                textFieldValue = username,
+                labelText = "Username",
+                labelTextSize = 14,
+                indentHeight = 16.dp
+            ) { change ->
+                username = change
+
+            }
+
+            Spacer(modifier = Modifier.height(18.dp))
+
+            SentientTextBox(
+                textFieldValue = password,
+                labelText = "Password",
+                labelTextSize = 14,
+                indentHeight = 16.dp,
+                visualTransformation = PasswordVisualTransformation()
+            ) { change ->
+                password = change
+
+            }
 
             Spacer(modifier = Modifier.height(34.dp))
 
@@ -153,7 +153,24 @@ fun WelcomeScreen(
     }
 
     @Composable
-    fun newUserScreen(modifier: Modifier) {
+    fun searchResultScreen() {
+        LazyColumn() {
+            items(searchResult.size) { index ->
+                val key = searchResult.keys.toList()[index]
+                val value = searchResult[key]
+                val album = rawAlbumList[key]
+                if (value != null)
+                    LastFmSyncCard(
+                        album,
+                        value
+                    )
+
+            }
+        }
+    }
+
+    @Composable
+    fun newUserScreen() {
 
         Box(modifier = Modifier.fillMaxSize()) {
             if (rawAlbumList.isEmpty() && mediaManagerState == MediaManagerState.LOADING_RAW) {
@@ -180,47 +197,55 @@ fun WelcomeScreen(
 
                     items(count = rawAlbumList.size) { index ->
                         val album = rawAlbumList[index]
+                        val selected by remember(selectedAlbumList.size) {
+                            mutableStateOf(selectedAlbumList.contains(index))
+                        }
+                        val songSelected by remember(selectedSongAlbumList.size) {
+                            mutableStateOf(selectedSongAlbumList.contains(index))
+                        }
 
                         AlbumCard(
                             albumName = album.albumAttributes.albumName,
                             artistName = album.albumAttributes.artistName,
                             artwork = album.albumAttributes.artwork,
-                            onClick = { },
-                            selected = selectedAlbumList.contains(index),
-                            onSelected = { bool ->
-                                if (bool) {
-                                    selectedAlbumList.add(index)
+                            onClick = {
+                                if (!selected) {
+                                    welcomeViewmodel.setSelectedAlbumList(
+                                        selectedAlbumList.toMutableList().apply { add(index) })
                                 } else {
-                                    selectedAlbumList.remove(index)
+                                    if (songSelected) {
+                                        welcomeViewmodel.setSelectedSongAlbumList(
+                                            selectedSongAlbumList.toMutableList()
+                                                .apply { remove(index) })
+                                    }
+                                    welcomeViewmodel.setSelectedAlbumList(
+                                        selectedAlbumList.toMutableList().apply { remove(index) })
                                 }
                             },
-                            onClickSelection = selectedAlbumList.isNotEmpty(),
-                            selectionCount = selectedAlbumList.indexOfFirst { it == index } + 1
+                            selected = selected,
+                            onLongClick = {
+                                if (!songSelected) {
+                                    if (!selected) {
+                                        welcomeViewmodel.setSelectedAlbumList(
+                                            selectedAlbumList.toMutableList().apply { add(index) })
+                                    }
+                                    welcomeViewmodel.setSelectedSongAlbumList(
+                                        selectedSongAlbumList.toMutableList().apply { add(index) })
+                                } else {
+                                    welcomeViewmodel.setSelectedSongAlbumList(
+                                        selectedSongAlbumList.toMutableList()
+                                            .apply { remove(index) })
+                                }
+
+                            },
+                            onClickSelection = false,
+                            selectionCount = if (songSelected) "S" else (selectedAlbumList.indexOfFirst { it == index } + 1).toString()
                         )
 
                     }
                 }
             }
-
-            Column(modifier = modifier.fillMaxWidth()) {
-                Text(
-                    "Let's set you up",
-                    fontFamily = UncutSans,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 20.sp,
-                    color = animatedSubTextColor.value
-                )
-                Text(
-                    "From below select the albums you want to update",
-                    fontFamily = UncutSans,
-                    fontSize = 18.sp,
-                    color = animatedSubTextColor.value
-                )
-
-            }
-
         }
-
 
     }
 
@@ -230,36 +255,12 @@ fun WelcomeScreen(
             .background(color = surfaceColor)
     ) {
 
-        if (lastFmState != LASTFM_STATE.SIGNED_IN) {
-            //loginBody(modifier = Modifier.align(Alignment.Center))
-        } else {
-            newUserScreen(modifier = Modifier.padding(top = animatedSubTextPos.value))
+        when (currentNavRoute) {
+            is NavRoutes.WelcomeLogin -> loginBody(modifier = Modifier.align(Alignment.Center))
+            is NavRoutes.WelcomeSearchAlbum -> searchResultScreen()
+            is NavRoutes.WelcomeSetupAlbum -> newUserScreen()
+            else -> {}
         }
-
-
-        Column(
-            modifier = Modifier.padding(start = 8.dp, top = 16.dp)
-        ) {
-//            Text(
-//                "Welcome",
-//                fontFamily = ViaodaLibre,
-//                fontSize = 78.sp,
-//                fontWeight = FontWeight.Bold,
-//                color = TitleColor
-//            )
-//            Text(
-//                modifier = Modifier
-//                    .offset(y = -28.dp)
-//                    .padding(start = 12.dp),
-//                text = if (lastFmState == LASTFM_STATE.SIGNED_IN && loginUsername.isNotEmpty()) loginUsername else "Kansui",
-//                fontFamily = ViaodaLibre,
-//                fontSize = 32.sp,
-//                fontWeight = FontWeight.ExtraLight,
-//                color = TitleColor
-//            )
-        }
-
-
     }
 
 

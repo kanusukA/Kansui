@@ -33,6 +33,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -44,6 +45,7 @@ import com.example.kasui.Presentation.screens.home.HomeScreen
 import com.example.kasui.Presentation.screens.home.WelcomeScreen
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.surfaceColor
+import com.example.kasui.viewmodels.WelcomeViewmodel
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -78,13 +80,14 @@ fun NavScreen() {
                 is Home -> navController.navigate(Home().route)
                 is Library -> navController.navigate(Library().route)
                 is Search -> navController.navigate(Search().route)
+                is WelcomeSearchAlbum -> navController.navigate(WelcomeSetupAlbum().route)
                 else -> {}
             }
         }
 
     }
 
-
+    val welcomeViewmodel: WelcomeViewmodel = viewModel(key = "WELCOME_VIEWMODEL")
 
 
     Surface(
@@ -100,6 +103,7 @@ fun NavScreen() {
 
                 composable(route = NavRoutes.WelcomeLogin().route) {
                     WelcomeScreen(
+                        welcomeViewmodel = welcomeViewmodel,
                         scrollPastFirstItem = {
                             isScrolledPastFirstItem = it
                         }
@@ -178,6 +182,7 @@ fun NavScreen() {
             TopBar(visibility = !isScrolledPastFirstItem)
 
             BottomBar(
+                welcomeViewmodel = welcomeViewmodel,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 24.dp, vertical = 16.dp)
@@ -204,7 +209,7 @@ private fun topBottomGradient(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    listOf(TitleColor.copy(alpha = 0.65f * intensityTop), Color.Transparent),
+                    listOf(TitleColor.copy(alpha = 0.75f * intensityTop), Color.Transparent),
                     endY = screenHeightDpFloat * 0.15f
                 )
             )
@@ -225,5 +230,5 @@ private fun topBottomGradient(
 @Preview
 @Composable
 fun previewNavScreen() {
-   // NavScreen()
+    // NavScreen()
 }

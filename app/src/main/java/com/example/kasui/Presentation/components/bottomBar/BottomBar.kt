@@ -89,6 +89,7 @@ import com.example.kasui.ui.surfaceVariantColor
 import com.example.kasui.ui.textColor
 import com.example.kasui.ui.variantHighColor
 import com.example.kasui.viewmodels.BottomBarViewModel
+import com.example.kasui.viewmodels.WelcomeViewmodel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -96,6 +97,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun BottomBar(
+    welcomeViewmodel: WelcomeViewmodel,
     modifier: Modifier = Modifier
 ) {
 
@@ -110,7 +112,6 @@ fun BottomBar(
         mutableStateOf(42.dp)
     }
 
-    val animBackBtn = animateDpAsState(backButtonSize)
 
     val showBackTab by remember(navState) {
         mutableStateOf(
@@ -181,7 +182,9 @@ fun BottomBar(
                         selected = true,
                         onHold = onHold,
                         dragPositionY = dragPositionY,
-                        onClick = { })
+                        onClick = {
+                            welcomeViewmodel.albumSyncLastFm()
+                        })
                 }
 
                 is NavRoutes.WelcomeLogin -> {
@@ -376,5 +379,5 @@ private fun BottomBarTab(
 @Preview
 @Composable
 fun previewBottomBar() {
-    BottomBar()
+    //BottomBar()
 }

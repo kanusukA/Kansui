@@ -28,10 +28,12 @@ import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import okhttp3.OkHttpClient
 import okhttp3.Request
+import okhttp3.RequestBody
 import okio.ByteString.Companion.encodeUtf8
 import okio.IOException
 import java.math.BigInteger
 import java.security.MessageDigest
+import kotlin.text.trim
 import kotlin.time.Duration.Companion.milliseconds
 
 
@@ -178,9 +180,65 @@ object LastFmManager {
             println("LOCAL ERROR : \n ${e.stackTraceToString()}")
             _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
         }
+    }
+
+    suspend fun fetchAlbumResults(
+        title: String,
+        artist: String? = null,
+        limit: Int = 20
+    ): LastFmSearchAlbum? {
+        val client = OkHttpClient()
+
+        if (_currentSession.value == null) {
+            println("NO SESSION KEY FOUND!")
+            return null
+        }
+
+        if (_apiLock) {
+            println("API LOCKED")
+            return null
+        }
+        getLock()
+
+        val url = LastFmApi.toHttpUrlOrNull()?.newBuilder()
+        url?.addQueryParameter("method", "album.search")
+        url?.addQueryParameter("album", title)
+        url?.addQueryParameter("api_key", LAST_API_KEY)
+        url?.addQueryParameter("limit", limit.toString())
+        url?.addQueryParameter("format", "json")
+
+        if (url == null) {
+            println("Unable to create url")
+            return null
+        }
+
+        val request = Request.Builder()
+            .url(url.build())
+            .get()
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val resultJson = response.body.string()
+                println("Result Found : $resultJson")
+                return Gson().fromJson(resultJson, LastFmSearchAlbum::class.java)
+
+            } else {
+                println("LAST ALBUM SEARCH FAILED : ${response.message} \n ${response.code} \n ${response.body.string()} ")
+            }
+        } catch (e: IOException) {
+            println("NETWORK ERROR : \n ${e.stackTraceToString()}")
+            _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
+        } catch (e: Exception) {
+            println("LOCAL ERROR : \n ${e.stackTraceToString()}")
+            _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
+        }
+        return null
 
 
     }
+
 
 }
 

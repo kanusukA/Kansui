@@ -10,6 +10,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
@@ -29,6 +30,7 @@ import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontStyle
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -40,8 +42,13 @@ import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.NavState
 import com.example.kasui.Presentation.WelcomeNavStage
 import com.example.kasui.ui.TitleColor
+import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
+import com.example.kasui.ui.surfaceColor
+import com.example.kasui.ui.surfaceHighColor
+import com.example.kasui.ui.textOnSurface
 import com.example.kasui.viewmodels.TopBarViewModel
+import kotlinx.coroutines.async
 
 
 @Composable
@@ -101,18 +108,45 @@ fun TopBar(
         )
     }
 
+    val animatedSubTextColor = remember { Animatable(TitleColor) }
+    val animatedSubTextPos = remember { androidx.compose.animation.core.Animatable(130f) }
+
 
 
     LaunchedEffect(visibility) {
         if (!visibility) {
-            animatedVisibility.animateTo(
-                Color.Transparent,
-                animationSpec = tween(durationMillis = 800, delayMillis = 700)
+            async {
+                animatedVisibility.animateTo(
+                    Color.Transparent,
+                    animationSpec = tween(durationMillis = 800, delayMillis = 700)
+                )
+            }
+            async {
+                animatedSubTextColor.animateTo(
+                    textOnSurface,
+                    animationSpec = tween(durationMillis = 800, delayMillis = 400)
+                )
+            }
+            animatedSubTextPos.animateTo(
+                0f,
+                animationSpec = tween(durationMillis = 800, delayMillis = 400)
             )
         } else {
-            animatedVisibility.animateTo(
-                TitleColor,
-                animationSpec = tween(durationMillis = 800, delayMillis = 0)
+            async {
+                animatedVisibility.animateTo(
+                    TitleColor,
+                    animationSpec = tween(durationMillis = 800, delayMillis = 0)
+                )
+            }
+            async {
+                animatedSubTextColor.animateTo(
+                    TitleColor,
+                    animationSpec = tween(durationMillis = 600, delayMillis = 0)
+                )
+            }
+            animatedSubTextPos.animateTo(
+                130f,
+                animationSpec = tween(durationMillis = 600, delayMillis = 0)
             )
         }
     }
@@ -141,20 +175,42 @@ fun TopBar(
             modifier = Modifier.offset(y = -38.dp),
             visible = navState.navRoute == NavRoutes.WelcomeLogin().route
         ) {
-            Text(
+            Column() {
+                Text(
 
-                text = username,
-                fontFamily = ViaodaLibre,
-                letterSpacing = (-4).sp,
-                style = TextStyle(
-                    textMotion = TextMotion.Animated,
-                    fontSize = 38.sp,
-                    color = animatedVisibility.value,
-                    lineHeight = 48.sp
+                    text = username,
+                    fontFamily = ViaodaLibre,
+                    letterSpacing = (-4).sp,
+                    style = TextStyle(
+                        textMotion = TextMotion.Animated,
+                        fontSize = 38.sp,
+                        color = animatedVisibility.value,
+                        lineHeight = 48.sp
 
+                    )
                 )
-            )
+
+                Spacer(modifier = Modifier.height(animatedSubTextPos.value.dp))
+
+                Text(
+                    modifier = Modifier.offset(y = -90.dp),
+                    text = "Let's set you up",
+                    fontFamily = UncutSans,
+                    fontWeight = FontWeight.Medium,
+                    fontSize = 20.sp,
+                    color = animatedSubTextColor.value
+                )
+                Text(
+                    modifier = Modifier.offset(y = -90.dp),
+                    text = "From below select the albums you want to update",
+                    fontFamily = UncutSans,
+                    fontSize = 18.sp,
+                    color = animatedSubTextColor.value
+                )
+
+            }
         }
+
         // ALBUM SUBTEXT
         AnimatedVisibility(
             modifier = Modifier.offset(y = -38.dp),

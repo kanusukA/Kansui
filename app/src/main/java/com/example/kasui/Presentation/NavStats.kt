@@ -41,6 +41,12 @@ sealed class NavRoutes(
         val popBackStack: Boolean = false,
     ) :
         NavRoutes(popBackStack, navRoute = route)
+
+    data class WelcomeSearchAlbum(
+        val route: String = "Welcome",
+        val popBackStack: Boolean = false,
+    ) :
+        NavRoutes(popBackStack, navRoute = route)
 }
 
 enum class WelcomeNavStage {

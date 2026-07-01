@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.kasui.Data.LastFm.LASTFM_STATE
 import com.example.kasui.Data.LastFm.LastFmManager
 import com.example.kasui.Data.request.MediaManager
+import com.example.kasui.Data.structure.album.Album
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.WelcomeNavStage
@@ -49,7 +50,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun initMain() {
         viewModelScope.launch(Dispatchers.IO) {
             LastFmManager.loadSessionKey(application.applicationContext)
-
         }
         viewModelScope.launch(Dispatchers.IO) {
             MediaManager.fetchMusicFiles(application.applicationContext)

@@ -54,8 +54,10 @@ import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.Presentation.components.Selectable
 import com.example.kasui.R
 import com.example.kasui.ui.TitleColor
+import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
+import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.textColor
 import com.example.kasui.ui.variantColor
 
@@ -65,10 +67,11 @@ fun AlbumCard(
     artistName: String,
     artwork: Artwork?,
     onClick: () -> Unit = {},
+    onLongClick: () -> Unit = {},
     selected: Boolean = false,
-    onSelected: (Boolean) -> Unit,
+    onSelected: (Boolean) -> Unit = {},
     onClickSelection: Boolean,
-    selectionCount: Int = 0,
+    selectionCount: String = "0",
 ) {
 
 
@@ -82,6 +85,7 @@ fun AlbumCard(
                 interactionSource = null,
                 indication = null,
                 onLongClick = {
+                    onLongClick()
                     onSelected(selected)
                 },
                 onClick = {
@@ -132,9 +136,11 @@ fun AlbumCard(
                 contentAlignment = Alignment.Center
             ) {
                 Text(
-                    "$selectionCount", fontFamily = ViaodaLibre,
+                    selectionCount,
+                    fontFamily = ViaodaLibre,
                     fontSize = 18.sp,
-                    color = textColor
+                    fontWeight = FontWeight.SemiBold,
+                    color = surfaceColor
 
                 )
             }

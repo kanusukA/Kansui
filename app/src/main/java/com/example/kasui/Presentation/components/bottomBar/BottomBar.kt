@@ -72,9 +72,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.NavState
-import com.example.kasui.Presentation.WelcomeNavStage
+import com.example.kasui.Presentation.WelcomeSubRoutes
+
 
 import com.example.kasui.R
 import com.example.kasui.ui.TitleColor
@@ -89,6 +91,7 @@ import com.example.kasui.ui.surfaceVariantColor
 import com.example.kasui.ui.textColor
 import com.example.kasui.ui.variantHighColor
 import com.example.kasui.viewmodels.BottomBarViewModel
+import com.example.kasui.viewmodels.MainViewModel
 import com.example.kasui.viewmodels.WelcomeViewmodel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
@@ -102,6 +105,7 @@ fun BottomBar(
 ) {
 
     val bottomBarViewModel: BottomBarViewModel = viewModel()
+    val mainViewModel: MainViewModel = viewModel()
 
     val navState by bottomBarViewModel.navState.collectAsStateWithLifecycle()
 
@@ -163,11 +167,27 @@ fun BottomBar(
     @Composable
     fun WelcomeScreenTabs() {
         if (navState.navRoute == NavRoutes.WelcomeLogin().route) {
+            when (navState.welcomeSubRoutes) {
+                WelcomeSubRoutes.LOGIN -> {
+                    BottomBarTab(
+                        icon = null,
+                        title = "Sign Up",
+                        selected = true,
+                        onHold = onHold,
+                        dragPositionY = dragPositionY,
+                        onClick = { })
+                    BottomBarTab(
+                        icon = null,
+                        title = "Sign In",
+                        selected = true,
+                        onHold = onHold,
+                        dragPositionY = dragPositionY,
+                        onClick = {
+                            welcomeViewmodel.loginLastFm(mainViewModel)
+                        })
+                }
 
-            when (navState) {
-
-
-                is NavRoutes.WelcomeSetupAlbum -> {
+                WelcomeSubRoutes.SETUP -> {
                     BottomBarTab(
                         icon = null,
                         title = "Back",
@@ -187,24 +207,28 @@ fun BottomBar(
                         })
                 }
 
-                is NavRoutes.WelcomeLogin -> {
+                WelcomeSubRoutes.SEARCH -> {
                     BottomBarTab(
                         icon = null,
-                        title = "Sign Up",
+                        title = "Back",
                         selected = true,
                         onHold = onHold,
                         dragPositionY = dragPositionY,
-                        onClick = { })
+                        onClick = {
+                            NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
+                        })
                     BottomBarTab(
                         icon = null,
-                        title = "Sign In",
+                        title = "Finalize",
                         selected = true,
                         onHold = onHold,
                         dragPositionY = dragPositionY,
-                        onClick = { })
+                        onClick = {
+
+                        })
                 }
 
-                else -> {}
+                WelcomeSubRoutes.NONE -> TODO()
             }
 
         }

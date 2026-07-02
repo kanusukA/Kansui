@@ -23,6 +23,7 @@ import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -46,6 +47,7 @@ import com.example.kasui.Data.LastFm.LASTFM_STATE
 import com.example.kasui.Data.request.MediaManagerState
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
+import com.example.kasui.Presentation.WelcomeSubRoutes
 import com.example.kasui.Presentation.components.albumCard.AlbumCard
 import com.example.kasui.Presentation.components.albumCard.LastFmSyncCard
 import com.example.kasui.ui.TitleColor
@@ -71,23 +73,29 @@ fun WelcomeScreen(
 
     val mainViewModel: MainViewModel = viewModel()
 
-    var username by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    val username by welcomeViewmodel.username.collectAsStateWithLifecycle()
+    val password by welcomeViewmodel.password.collectAsStateWithLifecycle()
 
     val lastFmState by mainViewModel.lastfmState.collectAsStateWithLifecycle()
     val mediaManagerState by mainViewModel.mediaManagerState.collectAsStateWithLifecycle()
     val rawAlbumList by mainViewModel.rawAlbums.collectAsStateWithLifecycle()
     val selectedAlbumList by welcomeViewmodel.selectedAlbumsList.collectAsStateWithLifecycle()
     val selectedSongAlbumList by welcomeViewmodel.selectedSongAlbumList.collectAsStateWithLifecycle()
+    val selectedSearchAlbums by welcomeViewmodel.selectedSearchAlbums.collectAsStateWithLifecycle()
 
     val searchResult by welcomeViewmodel.searchAlbum.collectAsStateWithLifecycle()
 
     val currentNavRoute by NavManager.navStates.collectAsStateWithLifecycle()
 
     val lazyState = rememberLazyGridState()
+    val lazyColumnState = rememberLazyListState() // Search Result Column
 
-    val isScrolledPastFirstItem by remember {
-        derivedStateOf { lazyState.firstVisibleItemIndex > 0 }
+    val isScrolledPastFirstItem by remember(currentNavRoute) {
+        if (currentNavRoute.welcomeSubRoutes == WelcomeSubRoutes.SETUP) {
+            derivedStateOf { lazyState.firstVisibleItemIndex > 0 }
+        } else {
+            derivedStateOf { lazyColumnState.firstVisibleItemIndex > 0 }
+        }
     }
 
     LaunchedEffect(isScrolledPastFirstItem) {
@@ -116,7 +124,7 @@ fun WelcomeScreen(
                 labelTextSize = 14,
                 indentHeight = 16.dp
             ) { change ->
-                username = change
+                welcomeViewmodel.setUsername(change)
 
             }
 
@@ -129,41 +137,44 @@ fun WelcomeScreen(
                 indentHeight = 16.dp,
                 visualTransformation = PasswordVisualTransformation()
             ) { change ->
-                password = change
+                welcomeViewmodel.setPassword(change)
 
             }
 
-            Spacer(modifier = Modifier.height(34.dp))
-
-            Row(
-                modifier = Modifier.width(240.dp),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                KButton("Sign Up") {
-
-                }
-                KButton(if (lastFmState == LASTFM_STATE.LOGGING_IN) "Signing In" else "Sign In") {
-                    if (lastFmState != LASTFM_STATE.LOGGING_IN) {
-                        mainViewModel.loginLastFm(username, password)
-                    }
-                }
-            }
+//            Spacer(modifier = Modifier.height(34.dp))
+//
+//            Row(
+//                modifier = Modifier.width(240.dp),
+//                horizontalArrangement = Arrangement.SpaceBetween
+//            ) {
+//
+//            }
 
         }
     }
 
     @Composable
     fun searchResultScreen() {
-        LazyColumn() {
+        LazyColumn(
+            state = lazyColumnState
+        ) {
+            item { Spacer(modifier = Modifier.height(260.dp)) }
             items(searchResult.size) { index ->
                 val key = searchResult.keys.toList()[index]
                 val value = searchResult[key]
                 val album = rawAlbumList[key]
-                if (value != null)
+                if (value?.albumMatches != null) {
+                    Spacer(modifier = Modifier.height(12.dp))
                     LastFmSyncCard(
                         album,
-                        value
+                        value.albumMatches,
+                        selectedSearchAlbums[index] ?: 0,
+                        onChangeSelection = {
+                            welcomeViewmodel.setSelectedSearchAlbums(index, it)
+                        }
                     )
+                }
+
 
             }
         }
@@ -255,10 +266,18 @@ fun WelcomeScreen(
             .background(color = surfaceColor)
     ) {
 
-        when (currentNavRoute) {
-            is NavRoutes.WelcomeLogin -> loginBody(modifier = Modifier.align(Alignment.Center))
-            is NavRoutes.WelcomeSearchAlbum -> searchResultScreen()
-            is NavRoutes.WelcomeSetupAlbum -> newUserScreen()
+        when (currentNavRoute.navRoute) {
+            NavRoutes.WelcomeLogin().route -> {
+                when (currentNavRoute.welcomeSubRoutes) {
+                    WelcomeSubRoutes.LOGIN -> loginBody(modifier = Modifier.align(Alignment.Center))
+                    WelcomeSubRoutes.SETUP -> newUserScreen()
+                    WelcomeSubRoutes.SEARCH -> searchResultScreen()
+                    else -> {
+
+                    }
+                }
+            }
+
             else -> {}
         }
     }

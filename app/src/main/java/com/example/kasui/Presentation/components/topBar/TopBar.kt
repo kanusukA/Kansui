@@ -40,7 +40,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kasui.Data.request.MediaManagerState
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.NavState
-import com.example.kasui.Presentation.WelcomeNavStage
+import com.example.kasui.Presentation.WelcomeSubRoutes
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
@@ -75,32 +75,34 @@ fun TopBar(
 
     val headingText by remember(navState, mediaState) {
         mutableStateOf(
+            value =
+                if (navState.navRoute == NavRoutes.WelcomeLogin().route) {
+                    "Welcome"
+                } else {
+                    when (navState) {
+                        is NavRoutes.Album -> {
+                            fontSizeScale = 64f
+                            selectedAlbum?.albumAttributes?.albumName ?: ""
+                        }
 
-            when (navState) {
-                is NavRoutes.Album -> {
-                    fontSizeScale = 64f
-                    selectedAlbum?.albumAttributes?.albumName ?: ""
+                        is NavRoutes.Search -> "Search"
+                        else -> {
+                            if (mediaState == MediaManagerState.LOADING_RAW) {
+                                "Loading"
+                            } else {
+                                fontSizeScale = 85f
+                                "Kansui"
+                            }
 
-                }
+                        }
 
-                is NavRoutes.Search -> "Search"
-                is NavRoutes.WelcomeLogin -> "Welcome"
-                is NavRoutes.WelcomeSetupAlbum -> "Welcome"
-
-                else -> {
-                    if (mediaState == MediaManagerState.LOADING_RAW) {
-                        "Loading"
-                    } else {
-                        fontSizeScale = 85f
-                        "Kansui"
                     }
-
                 }
 
-            }
 
         )
     }
+
 
     val subText by remember(selectedAlbum) {
         mutableStateOf(
@@ -192,21 +194,28 @@ fun TopBar(
 
                 Spacer(modifier = Modifier.height(animatedSubTextPos.value.dp))
 
-                Text(
-                    modifier = Modifier.offset(y = -90.dp),
-                    text = "Let's set you up",
-                    fontFamily = UncutSans,
-                    fontWeight = FontWeight.Medium,
-                    fontSize = 20.sp,
-                    color = animatedSubTextColor.value
-                )
-                Text(
-                    modifier = Modifier.offset(y = -90.dp),
-                    text = "From below select the albums you want to update",
-                    fontFamily = UncutSans,
-                    fontSize = 18.sp,
-                    color = animatedSubTextColor.value
-                )
+                AnimatedVisibility(
+                    visible = navState == NavRoutes.WelcomeSetupAlbum() || navState == NavRoutes.WelcomeSearchAlbum()
+                ) {
+                    Column {
+                        Text(
+                            modifier = Modifier.offset(y = -90.dp),
+                            text = if (navState == NavRoutes.WelcomeSetupAlbum()) "Let's set you up" else "Choose album",
+                            fontFamily = UncutSans,
+                            fontWeight = FontWeight.Medium,
+                            fontSize = 20.sp,
+                            color = animatedSubTextColor.value
+                        )
+                        Text(
+                            modifier = Modifier.offset(y = -90.dp),
+                            text = if (navState == NavRoutes.WelcomeSetupAlbum()) "From below select the albums you want to update"
+                            else "Select the album most accurate to the one searched for.",
+                            fontFamily = UncutSans,
+                            fontSize = 18.sp,
+                            color = animatedSubTextColor.value
+                        )
+                    }
+                }
 
             }
         }

@@ -80,8 +80,9 @@ fun NavScreen() {
                 is Home -> navController.navigate(Home().route)
                 is Library -> navController.navigate(Library().route)
                 is Search -> navController.navigate(Search().route)
-                is WelcomeSearchAlbum -> navController.navigate(WelcomeSetupAlbum().route)
-                else -> {}
+                is WelcomeSearchAlbum -> navController.navigate(WelcomeSearchAlbum().route)
+                is WelcomeLogin -> navController.navigate(WelcomeLogin().route)
+                is WelcomeSetupAlbum -> navController.navigate(WelcomeSetupAlbum().route)
             }
         }
 
@@ -102,6 +103,30 @@ fun NavScreen() {
             ) {
 
                 composable(route = NavRoutes.WelcomeLogin().route) {
+                    BackHandler(enabled = true) {
+                        println("POP back")
+                        when (navState.welcomeSubRoutes) {
+
+                            WelcomeSubRoutes.LOGIN -> TODO()
+                            WelcomeSubRoutes.SETUP -> {
+                                NavManager.changeNavState(
+                                    NavRoutes.WelcomeLogin(
+                                        popBackStack = true
+                                    )
+                                )
+                            }
+
+                            WelcomeSubRoutes.SEARCH -> {
+                                NavManager.changeNavState(
+                                    NavRoutes.WelcomeSetupAlbum(
+                                        popBackStack = true
+                                    )
+                                )
+                            }
+
+                            WelcomeSubRoutes.NONE -> {}
+                        }
+                    }
                     WelcomeScreen(
                         welcomeViewmodel = welcomeViewmodel,
                         scrollPastFirstItem = {

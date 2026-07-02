@@ -1,5 +1,7 @@
 package com.example.kasui.viewmodels
 
+import android.os.Build
+import androidx.annotation.RequiresExtension
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kasui.Data.LastFm.LASTFM_STATE
@@ -9,6 +11,7 @@ import com.example.kasui.Data.request.MediaManager
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
@@ -16,9 +19,24 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class WelcomeViewmodel : ViewModel() {
+
+    private var _username = MutableStateFlow("")
+    val username = _username.asStateFlow()
+
+    fun setUsername(str: String) {
+        _username.update { str }
+    }
+
+    private var _password = MutableStateFlow("")
+    val password = _password.asStateFlow()
+
+    fun setPassword(str: String) {
+        _password.update { str }
+    }
 
     private var _selectedAlbumsList = MutableStateFlow<List<Int>>(emptyList())
     val selectedAlbumsList = _selectedAlbumsList.asStateFlow()
@@ -38,6 +56,16 @@ class WelcomeViewmodel : ViewModel() {
     private var _searchAlbums = MutableStateFlow<Map<Int, LastFmSearchAlbum>>(emptyMap())
     val searchAlbum = _searchAlbums.asStateFlow()
 
+    // Int - SearchAlbum Key , Int - LastFmSearchAlbum Index for that value
+    private var _selectedSearchAlbums = MutableStateFlow<Map<Int, Int>>(emptyMap())
+    val selectedSearchAlbums = _selectedSearchAlbums.asStateFlow()
+
+    fun setSelectedSearchAlbums(key: Int, value: Int) {
+        _selectedSearchAlbums.update {
+            _selectedSearchAlbums.value.toMutableMap().apply { put(key, value) }.toMap()
+        }
+    }
+
     val rawAlbums = MediaManager.rawAlbumList
 
     val lastfmState = LastFmManager.lastFmState.map {
@@ -51,21 +79,41 @@ class WelcomeViewmodel : ViewModel() {
         LASTFM_STATE.SIGNED_OUT
     )
 
+
+    fun loginLastFm(mainViewModel: MainViewModel) {
+        mainViewModel.loginLastFm(username.value, password.value)
+    }
+
     fun albumSyncLastFm() {
         NavManager.changeNavState(NavRoutes.WelcomeSearchAlbum())
+        _searchAlbums.update { emptyMap() }
+        _selectedSearchAlbums.update { emptyMap() }
         viewModelScope.launch(Dispatchers.IO) {
             val searchMap = mutableMapOf<Int, LastFmSearchAlbum>()
-            println("selectedAlbum Size : ${selectedAlbumsList.value.size}")
-            selectedAlbumsList.value.forEach { index ->
+            val selectedSearchMap =
+                mutableMapOf<Int, Int>() // Used to prefill the selection Map with 0 index to select first result
+            for (index in selectedAlbumsList.value.indices) {
+                delay(500.milliseconds)
                 val album = rawAlbums.value[index]
                 val result =
-                    LastFmManager.fetchAlbumResults(album.albumAttributes.albumName, limit = 3)
+                    LastFmManager.fetchAlbumResults(
+                        album.albumAttributes.albumName,
+                        artist = album.albumAttributes.artistName,
+                        limit = 3
+                    )
+
                 if (result != null) {
+                    selectedSearchMap[index] = 0
                     searchMap[index] = result
+                    _selectedSearchAlbums.update { selectedSearchMap }
                     _searchAlbums.update { searchMap.toMap() }
+
+
                 }
 
             }
+
+
         }
 
     }

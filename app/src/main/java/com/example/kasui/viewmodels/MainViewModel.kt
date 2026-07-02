@@ -10,10 +10,8 @@ import androidx.lifecycle.viewModelScope
 import com.example.kasui.Data.LastFm.LASTFM_STATE
 import com.example.kasui.Data.LastFm.LastFmManager
 import com.example.kasui.Data.request.MediaManager
-import com.example.kasui.Data.structure.album.Album
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
-import com.example.kasui.Presentation.WelcomeNavStage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -23,19 +21,10 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-@RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 15)
 class MainViewModel(application: Application) : AndroidViewModel(application) {
 
-    val lastfmState = LastFmManager.lastFmState.map {
-        if (it == LASTFM_STATE.SIGNED_IN && NavManager.navStates.value == NavRoutes.WelcomeLogin()) {
-            NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
-        }
-        it
-    }.stateIn(
-        scope = viewModelScope,
-        started = SharingStarted.Eagerly,
-        LASTFM_STATE.SIGNED_OUT
-    )
+    val lastfmState = LastFmManager.lastFmState
+
     val username: StateFlow<String> = LastFmManager.username.stateIn(
         scope = viewModelScope,
         started = SharingStarted.Eagerly,
@@ -60,14 +49,26 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun loginLastFm(username: String, password: String) {
         if (lastfmState.value == LASTFM_STATE.SIGNED_IN) {
             println("ALREADY LOGGED IN")
+            when (NavManager.navStates.value) {
+                is NavRoutes.WelcomeLogin -> NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
+                else -> {}
+            }
             return
         }
         if (lastfmState.value == LASTFM_STATE.LOGGING_IN) {
             println("ALREADY ATTEMPTING A LOGIN")
+            return
         }
 
         loginCoroutine.launch {
-            LastFmManager.initLastFm(context = application.applicationContext, username, password)
+            val result = LastFmManager.initLastFm(
+                context = application.applicationContext,
+                username,
+                password
+            )
+            if (result) {
+                NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
+            }
         }
 
     }

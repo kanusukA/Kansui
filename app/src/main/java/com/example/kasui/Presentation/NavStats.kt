@@ -16,7 +16,8 @@ enum class NavState {
 
 sealed class NavRoutes(
     val popBack: Boolean = false,
-    val navRoute: String
+    val navRoute: String,
+    val welcomeSubRoutes: WelcomeSubRoutes = WelcomeSubRoutes.NONE
 ) {
     data class Home(val route: String = "Home", val popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
@@ -32,26 +33,32 @@ sealed class NavRoutes(
 
     data class WelcomeLogin(
         val route: String = "Welcome",
+        val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.LOGIN,
         val popBackStack: Boolean = false,
     ) :
-        NavRoutes(popBackStack, navRoute = route)
+        NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
 
     data class WelcomeSetupAlbum(
         val route: String = "Welcome",
+        val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.SETUP,
         val popBackStack: Boolean = false,
     ) :
-        NavRoutes(popBackStack, navRoute = route)
+        NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
 
     data class WelcomeSearchAlbum(
         val route: String = "Welcome",
+        val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.SEARCH,
         val popBackStack: Boolean = false,
     ) :
-        NavRoutes(popBackStack, navRoute = route)
+        NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
 }
 
-enum class WelcomeNavStage {
+
+enum class WelcomeSubRoutes {
     LOGIN,
-    SETUP
+    SETUP,
+    SEARCH,
+    NONE
 }
 
 object NavManager {

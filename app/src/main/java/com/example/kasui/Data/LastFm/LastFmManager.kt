@@ -43,6 +43,9 @@ private val Context.dataStore by preferencesDataStore(name = "user_settings_crit
 
 object LastFmManager {
 
+    // API CALLS MUST NOT DEPEND ON TRIES TO ACT AS BUFFER.
+    // FOR API CALL MADE IN BULK DELAY THEM ACCORDING TO THE API LOCK DELAY TO AVOID TRIES
+    val tries = 5
 
     private val SESSION_KEY = stringPreferencesKey("session_key")
 
@@ -74,11 +77,12 @@ object LastFmManager {
 
     private var lockCoroutine = CoroutineScope(Dispatchers.IO)
 
+    // if request is pass it's put in a buffer and executed when lock is removed
     private fun getLock() {
         lockCoroutine.launch {
             lockMutex.withLock {
                 _apiLock = true
-                delay(500.milliseconds)
+                delay(400.milliseconds)
                 _apiLock = false
             }
         }
@@ -116,14 +120,18 @@ object LastFmManager {
 
     }
 
-    suspend fun initLastFm(context: Context, username: String, password: String) {
+    suspend fun initLastFm(context: Context, username: String, password: String): Boolean {
 
         _lastFmState.update { LASTFM_STATE.LOGGING_IN }
+
+        if (_lastFmState.value == LASTFM_STATE.SIGNED_IN) {
+            return true
+        }
 
         val client = OkHttpClient()
         if (_apiLock) {
             println("API LOCKED")
-            return
+            return false
         }
         getLock()
 
@@ -167,6 +175,7 @@ object LastFmManager {
                 saveSessionKey(context, result)
                 println(_currentSession)
                 _lastFmState.update { LASTFM_STATE.SIGNED_IN }
+                return true
             } else {
                 println("LAST FM LOGIN ATTEMPT FAILED : ${response.message} \n ${response.code} \n ${response.body.string()} ")
                 _lastFmState.update { LASTFM_STATE.FAILED_LOGIN_USERNAME }
@@ -180,6 +189,7 @@ object LastFmManager {
             println("LOCAL ERROR : \n ${e.stackTraceToString()}")
             _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
         }
+        return false
     }
 
     suspend fun fetchAlbumResults(
@@ -196,13 +206,25 @@ object LastFmManager {
 
         if (_apiLock) {
             println("API LOCKED")
-            return null
+            var count = 0
+            while (count < tries) {
+                if (!_apiLock) {
+                    break
+                }
+                delay(1000.milliseconds)
+                count += 1
+            }
+            if (_apiLock) {
+                println("TRIES EXCEEDED")
+                return null
+            }
         }
         getLock()
 
+
         val url = LastFmApi.toHttpUrlOrNull()?.newBuilder()
         url?.addQueryParameter("method", "album.search")
-        url?.addQueryParameter("album", title)
+        url?.addQueryParameter("album", title + " ${artist}")
         url?.addQueryParameter("api_key", LAST_API_KEY)
         url?.addQueryParameter("limit", limit.toString())
         url?.addQueryParameter("format", "json")
@@ -216,6 +238,8 @@ object LastFmManager {
             .url(url.build())
             .get()
             .build()
+
+
 
         try {
             val response = client.newCall(request).execute()

@@ -52,7 +52,7 @@ object MediaManager {
     )
     val mediaState: StateFlow<MediaManagerState> = _mediaState.asStateFlow()
 
-    @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 15)
+
     suspend fun fetchMusicFiles(context: Context) {
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         _mediaState.update { MediaManagerState.LOADING_RAW }

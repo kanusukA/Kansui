@@ -47,6 +47,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
 
     fun loginLastFm(username: String, password: String) {
+
         if (lastfmState.value == LASTFM_STATE.SIGNED_IN) {
             println("ALREADY LOGGED IN")
             when (NavManager.navStates.value) {
@@ -67,6 +68,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 password
             )
             if (result) {
+
                 NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
             }
         }

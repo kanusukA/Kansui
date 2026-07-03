@@ -9,6 +9,8 @@ import androidx.datastore.preferences.preferencesDataStore
 import com.example.kasui.Data.local.LAST_API_KEY
 import com.example.kasui.Data.local.LAST_API_SECRET
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
+import com.google.gson.JsonParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -31,6 +33,7 @@ import okhttp3.Request
 import okhttp3.RequestBody
 import okio.ByteString.Companion.encodeUtf8
 import okio.IOException
+import timber.log.Timber
 import java.math.BigInteger
 import java.security.MessageDigest
 import kotlin.text.trim
@@ -48,6 +51,10 @@ object LastFmManager {
     val tries = 5
 
     private val SESSION_KEY = stringPreferencesKey("session_key")
+
+    private val gson = GsonBuilder()
+        .setPrettyPrinting()
+        .create()
 
 
     @Serializable
@@ -86,6 +93,31 @@ object LastFmManager {
                 _apiLock = false
             }
         }
+    }
+
+    private suspend fun validationCheck(): Boolean {
+        if (_currentSession.value == null) {
+            println("NO SESSION KEY FOUND!")
+            return false
+        }
+
+        if (_apiLock) {
+            println("API LOCKED")
+            var count = 0
+            while (count < tries) {
+                if (!_apiLock) {
+                    break
+                }
+                delay(1000.milliseconds)
+                count += 1
+            }
+            if (_apiLock) {
+                println("TRIES EXCEEDED")
+                return false
+            }
+        }
+        getLock()
+        return true;
     }
 
 
@@ -199,27 +231,9 @@ object LastFmManager {
     ): LastFmSearchAlbum? {
         val client = OkHttpClient()
 
-        if (_currentSession.value == null) {
-            println("NO SESSION KEY FOUND!")
+        if (!validationCheck()) {
             return null
         }
-
-        if (_apiLock) {
-            println("API LOCKED")
-            var count = 0
-            while (count < tries) {
-                if (!_apiLock) {
-                    break
-                }
-                delay(1000.milliseconds)
-                count += 1
-            }
-            if (_apiLock) {
-                println("TRIES EXCEEDED")
-                return null
-            }
-        }
-        getLock()
 
 
         val url = LastFmApi.toHttpUrlOrNull()?.newBuilder()
@@ -259,8 +273,171 @@ object LastFmManager {
             _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
         }
         return null
+    }
+
+    suspend fun fetchTrackResults(
+        track: String,
+        artist: String?,
+        limit: Int = 3
+    ): LastFmSearchTrack? {
+        val client = OkHttpClient()
+
+        if (!validationCheck()) {
+            return null
+        }
 
 
+        val url = LastFmApi.toHttpUrlOrNull()?.newBuilder()
+        url?.addQueryParameter("method", "track.search")
+        url?.addQueryParameter("track", track)
+        url?.addQueryParameter("api_key", LAST_API_KEY)
+        url?.addQueryParameter("artist", artist)
+        url?.addQueryParameter("limit", limit.toString())
+        url?.addQueryParameter("format", "json")
+
+        if (url == null) {
+            println("Unable to create url")
+            return null
+        }
+
+        val request = Request.Builder()
+            .url(url.build())
+            .get()
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val resultJson = response.body.string()
+                val parsed = JsonParser.parseString(resultJson)
+                Timber.d(gson.toJson(parsed))
+                val result = gson.fromJson(resultJson, LastFmSearchTrack::class.java)
+                Timber.d(gson.toJson(result))
+
+            } else {
+                println("LAST ALBUM SEARCH FAILED : ${response.message} \n ${response.code} \n ${response.body.string()} ")
+            }
+        } catch (e: IOException) {
+            println("NETWORK ERROR : \n ${e.stackTraceToString()}")
+            _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
+        } catch (e: Exception) {
+            println("LOCAL ERROR : \n ${e.stackTraceToString()}")
+            _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
+        }
+        return null
+    }
+
+
+    suspend fun getAlbumInfo(
+        title: String,
+        artist: String,
+    ): LastFmAlbum? {
+        val client = OkHttpClient()
+
+        if (_currentSession.value == null) {
+            println("NO SESSION KEY FOUND!")
+            return null
+        }
+
+        if (!validationCheck()) {
+            return null
+        }
+
+        val url = LastFmApi.toHttpUrlOrNull()?.newBuilder()
+        url?.addQueryParameter("method", "album.getinfo")
+        url?.addQueryParameter("album", title)
+        url?.addQueryParameter("artist", artist)
+        url?.addQueryParameter("api_key", LAST_API_KEY)
+        url?.addQueryParameter("format", "json")
+
+        if (url == null) {
+            println("Unable to create url")
+            return null
+        }
+
+        val request = Request.Builder()
+            .url(url.build())
+            .get()
+            .build()
+
+
+        try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val resultJson = response.body.string()
+                //val parsed = JsonParser.parseString(resultJson)
+                //Timber.d("RESULT : ${gson.toJson(parsed)}")
+//                println("Result Found : $resultJson")
+                val result = gson.fromJson(resultJson, LastFmAlbum::class.java)
+                //  Timber.d(gson.toJson(result))
+                return result
+            } else {
+                println("LAST ALBUM SEARCH FAILED : ${response.message} \n ${response.code} \n ${response.body.string()} ")
+            }
+        } catch (e: IOException) {
+            println("NETWORK ERROR : \n ${e.stackTraceToString()}")
+            _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
+        } catch (e: Exception) {
+            println("LOCAL ERROR : \n ${e.stackTraceToString()}")
+            _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
+        }
+        return null
+    }
+
+    suspend fun getTrackInfo(
+        title: String,
+        artist: String,
+    ): LastFmTrack? {
+        val client = OkHttpClient()
+
+        if (_currentSession.value == null) {
+            println("NO SESSION KEY FOUND!")
+            return null
+        }
+
+        if (!validationCheck()) {
+            return null
+        }
+
+        val url = LastFmApi.toHttpUrlOrNull()?.newBuilder()
+        url?.addQueryParameter("method", "track.getInfo")
+        url?.addQueryParameter("track", title)
+        url?.addQueryParameter("artist", artist)
+        url?.addQueryParameter("api_key", LAST_API_KEY)
+        url?.addQueryParameter("format", "json")
+
+        if (url == null) {
+            println("Unable to create url")
+            return null
+        }
+
+        val request = Request.Builder()
+            .url(url.build())
+            .get()
+            .build()
+
+        try {
+            val response = client.newCall(request).execute()
+            if (response.isSuccessful) {
+                val resultJson = response.body.string()
+                val parsed = JsonParser.parseString(resultJson)
+                //Timber.d("RESULT : ${gson.toJson(parsed)}")
+//                println("Result Found : $resultJson")
+                val result = gson.fromJson(resultJson, LastFmTrack::class.java)
+                //Timber.d(gson.toJson(result))
+                return result
+
+            } else {
+                println("LAST ALBUM SEARCH FAILED : ${response.message} \n ${response.code} \n ${response.body.string()} ")
+            }
+        } catch (e: IOException) {
+            println("NETWORK ERROR : \n ${e.stackTraceToString()}")
+            _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
+        } catch (e: Exception) {
+            println("LOCAL ERROR : \n ${e.stackTraceToString()}")
+            _lastFmState.update { LASTFM_STATE.NETWORK_ERROR }
+        }
+        return null
     }
 
 

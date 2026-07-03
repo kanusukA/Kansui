@@ -94,4 +94,8 @@ dependencies {
     // SAVE SESSION
     implementation(libs.androidx.datastore.preferences)
 
+
+    /// REMOVE IN PROD
+    implementation(libs.timber)
+
 }

@@ -1,12 +1,11 @@
 package com.example.kasui.viewmodels
 
-import android.os.Build
-import androidx.annotation.RequiresExtension
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.kasui.Data.LastFm.LASTFM_STATE
 import com.example.kasui.Data.LastFm.LastFmManager
 import com.example.kasui.Data.LastFm.LastFmSearchAlbum
+import com.example.kasui.Data.LastFm.LastFmSearchTrack
 import com.example.kasui.Data.request.MediaManager
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
@@ -15,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -56,9 +56,17 @@ class WelcomeViewmodel : ViewModel() {
     private var _searchAlbums = MutableStateFlow<Map<Int, LastFmSearchAlbum>>(emptyMap())
     val searchAlbum = _searchAlbums.asStateFlow()
 
-    // Int - SearchAlbum Key , Int - LastFmSearchAlbum Index for that value
+    // Int - SearchAlbum Key / i.e. rawAlbum index , Int - LastFmSearchAlbum Index for that value
     private var _selectedSearchAlbums = MutableStateFlow<Map<Int, Int>>(emptyMap())
     val selectedSearchAlbums = _selectedSearchAlbums.asStateFlow()
+
+    // Int - rawSong Index / Track Search result
+    private var _searchSongAlbums = MutableStateFlow<Map<Int, LastFmSearchTrack>>(emptyMap())
+    val searchTrackAlbums = _searchSongAlbums.asStateFlow()
+
+    // Int - searchSong Key / LastFmSearchTrack index
+    private var _selectedSongSearchTracks = MutableStateFlow<Map<Int, Int>>(emptyMap())
+    val selectedSongSearchTracks = _selectedSongSearchTracks.asStateFlow()
 
     fun setSelectedSearchAlbums(key: Int, value: Int) {
         _selectedSearchAlbums.update {
@@ -67,6 +75,7 @@ class WelcomeViewmodel : ViewModel() {
     }
 
     val rawAlbums = MediaManager.rawAlbumList
+    val rawSongs = MediaManager.rawSongList
 
     val lastfmState = LastFmManager.lastFmState.map {
         if (it == LASTFM_STATE.SIGNED_IN && NavManager.navStates.value == NavRoutes.WelcomeLogin()) {
@@ -90,26 +99,58 @@ class WelcomeViewmodel : ViewModel() {
         _selectedSearchAlbums.update { emptyMap() }
         viewModelScope.launch(Dispatchers.IO) {
             val searchMap = mutableMapOf<Int, LastFmSearchAlbum>()
+            val searchSongMap = mutableMapOf<Int, LastFmSearchTrack>()
             val selectedSearchMap =
                 mutableMapOf<Int, Int>() // Used to prefill the selection Map with 0 index to select first result
+            val selectedSearchSongMap = mutableMapOf<Int, Int>()
             for (index in selectedAlbumsList.value.indices) {
                 delay(500.milliseconds)
                 val album = rawAlbums.value[index]
-                val result =
-                    LastFmManager.fetchAlbumResults(
-                        album.albumAttributes.albumName,
-                        artist = album.albumAttributes.artistName,
-                        limit = 3
-                    )
+                if (selectedSongAlbumList.value.contains(index)) {
+                    if (!album.albumRelationships?.tracks.isNullOrEmpty()) {
+                        for (trackIndex in album.albumRelationships.tracks.indices) {
+                            for (rawSongIndex in rawSongs.value.indices) {
+                                if (album.albumRelationships.tracks[trackIndex] == rawSongs.value[rawSongIndex].id) {
+                                    val track =
+                                        rawSongs.value.firstOrNull { it.id == album.albumRelationships.tracks[trackIndex] }
+                                    if (track != null && track.attributes.albumName != null) {
+                                        val result = LastFmManager.fetchTrackResults(
+                                            track.attributes.albumName,
+                                            track.attributes.artistName
+                                        )
+                                        if (result != null) {
+                                            searchSongMap[rawSongIndex] = result
+                                            selectedSearchSongMap[rawSongIndex] = 0
+                                            _searchSongAlbums.update { searchSongMap }
+                                            _selectedSongSearchTracks.update { selectedSearchSongMap }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
 
-                if (result != null) {
-                    selectedSearchMap[index] = 0
-                    searchMap[index] = result
-                    _selectedSearchAlbums.update { selectedSearchMap }
-                    _searchAlbums.update { searchMap.toMap() }
+                } else {
 
+
+                    val result =
+                        LastFmManager.fetchAlbumResults(
+                            album.albumAttributes.albumName,
+                            artist = album.albumAttributes.artistName,
+                            limit = 3
+                        )
+
+                    if (result != null) {
+                        selectedSearchMap[index] = 0
+                        searchMap[index] = result
+                        _selectedSearchAlbums.update { selectedSearchMap }
+                        _searchAlbums.update { searchMap.toMap() }
+
+
+                    }
 
                 }
+
 
             }
 

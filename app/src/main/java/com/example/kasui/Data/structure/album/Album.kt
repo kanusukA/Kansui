@@ -9,8 +9,7 @@ class Album(
     val albumAttributes: AlbumAttributes,
     val albumRelationships: AlbumRelationships?,
     val albumViews: AlbumViews?
-) {
-}
+)
 
 data class AlbumAttributes(
     // Required

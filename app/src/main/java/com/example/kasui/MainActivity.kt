@@ -21,6 +21,7 @@ import com.example.kasui.viewmodels.MainViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 
 class MainActivity : AppCompatActivity() {
@@ -58,6 +59,9 @@ class MainActivity : AppCompatActivity() {
     @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 15)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        Timber.plant(Timber.DebugTree())
+
         supportActionBar?.hide()
 
         checkAudioPermission()

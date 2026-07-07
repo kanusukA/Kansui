@@ -2,6 +2,7 @@ package com.example.kasui.Presentation.components.topBar
 
 
 import androidx.compose.animation.Animatable
+import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -16,9 +17,12 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyRow
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -47,7 +51,9 @@ import com.example.kasui.ui.ViaodaLibre
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.surfaceHighColor
 import com.example.kasui.ui.textOnSurface
+import com.example.kasui.viewmodels.TopBarSelectionState
 import com.example.kasui.viewmodels.TopBarViewModel
+import com.example.kasui.viewmodels.TopSelectionBars
 import kotlinx.coroutines.async
 
 
@@ -73,34 +79,40 @@ fun TopBar(
     val animatedFontSizeScale =
         animateFloatAsState(fontSizeScale)
 
-    val headingText by remember(navState, mediaState) {
+    val topBarSelectionState by topBarViewModel.topBarSelectionState.collectAsStateWithLifecycle()
+
+    var headingText by remember(navState, mediaState) {
         mutableStateOf(
-            value =
-                if (navState.navRoute == NavRoutes.WelcomeLogin().route) {
-                    "Welcome"
-                } else {
-                    when (navState) {
-                        is NavRoutes.Album -> {
-                            fontSizeScale = 64f
-                            selectedAlbum?.albumAttributes?.albumName ?: ""
-                        }
-
-                        is NavRoutes.Search -> "Search"
-                        else -> {
-                            if (mediaState == MediaManagerState.LOADING_RAW) {
-                                "Loading"
-                            } else {
-                                fontSizeScale = 85f
-                                "Kansui"
-                            }
-
-                        }
-
-                    }
-                }
+            value = "Kansui"
+//                if (navState.navRoute == NavRoutes.WelcomeLogin().route) {
+//                    "Welcome"
+//                } else {
+//                    when (navState) {
+//                        is NavRoutes.Album -> {
+//                            fontSizeScale = 64f
+//                            selectedAlbum?.albumAttributes?.albumName ?: ""
+//                        }
+//
+//                        is NavRoutes.Search -> "Search"
+//                        else -> {
+//                            if (mediaState == MediaManagerState.LOADING_RAW) {
+//                                "Loading"
+//                            } else {
+//                                fontSizeScale = 85f
+//                                "Kansui"
+//                            }
+//
+//                        }
+//
+//                    }
+//                }
 
 
         )
+    }
+
+    var subHeading by remember {
+        mutableStateOf("")
     }
 
 
@@ -108,6 +120,56 @@ fun TopBar(
         mutableStateOf(
             selectedAlbum?.albumAttributes?.artistName ?: ""
         )
+    }
+
+    val selectionMode by remember(topBarSelectionState) {
+        mutableStateOf(topBarSelectionState != TopBarSelectionState.NONE)
+    }
+
+    val topSelectionBar: TopSelectionBars by remember {
+        mutableStateOf(TopSelectionBars.WelcomeSelectionBar())
+    }
+
+    LaunchedEffect(navState, mediaState) {
+        when (navState) {
+            is NavRoutes.Album -> {
+                headingText = "Kansui"
+                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+            }
+
+            is NavRoutes.Home -> {
+                headingText = "Kansui"
+                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+            }
+
+            is NavRoutes.Library -> {
+                headingText = "Kansui"
+                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+            }
+
+            is NavRoutes.Search -> {
+                headingText = "Search"
+                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+            }
+
+            is NavRoutes.WelcomeLogin -> {
+                headingText = "Welcome"
+                subHeading = if (username.isNotEmpty()) username else "Kansui"
+                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+            }
+
+            is NavRoutes.WelcomeSearchAlbum -> {
+                headingText = "Welcome"
+                subHeading = ""
+                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.ALBUM_WELCOME)
+            }
+
+            is NavRoutes.WelcomeSetupAlbum -> {
+                headingText = "Welcome"
+                subHeading = if (username.isNotEmpty()) username else "Kansui"
+                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+            }
+        }
     }
 
     val animatedSubTextColor = remember { Animatable(TitleColor) }
@@ -161,17 +223,41 @@ fun TopBar(
             .padding(top = animatedTopPadding.value)
     )
     {
-        Text(
-            text = headingText,
-            fontFamily = ViaodaLibre,
-            letterSpacing = (-4).sp,
-            style = TextStyle(
-                textMotion = TextMotion.Animated,
-                fontSize = animatedFontSizeScale.value.sp,
-                color = animatedVisibility.value,
-                lineHeight = 52.sp
-            )
-        )
+        AnimatedContent(selectionMode) { mode ->
+            if (!mode) {
+                Text(
+                    text = headingText,
+                    fontFamily = ViaodaLibre,
+                    letterSpacing = (-4).sp,
+                    style = TextStyle(
+                        textMotion = TextMotion.Animated,
+                        fontSize = animatedFontSizeScale.value.sp,
+                        color = animatedVisibility.value,
+                        lineHeight = 52.sp
+                    )
+                )
+            } else {
+                SelectionBar(topSelectionBar.entries, 1.0f)
+//                LazyRow() {
+//                    items(topSelectionBar.entries) { entry ->
+//                        Text(
+//                            text = entry,
+//                            fontFamily = ViaodaLibre,
+//                            letterSpacing = (-4).sp,
+//                            style = TextStyle(
+//                                textMotion = TextMotion.Animated,
+//                                fontSize = animatedFontSizeScale.value.sp,
+//                                color = animatedVisibility.value,
+//                                lineHeight = 52.sp
+//                            )
+//                        )
+//                        Spacer(modifier = Modifier.width(48.dp))
+//                    }
+//                    item { Spacer(modifier = Modifier.width(300.dp)) }
+//                }
+            }
+        }
+
         // WELCOME SUBTEXT
         AnimatedVisibility(
             modifier = Modifier.offset(y = -38.dp),

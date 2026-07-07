@@ -8,15 +8,26 @@ import com.example.kasui.Data.request.MediaManagerState
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.NavState
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 
 class TopBarViewModel : ViewModel() {
     // EXTERNAL
     lateinit var navState: StateFlow<NavRoutes>
+
+    private var _topBarSelectionState: MutableStateFlow<TopBarSelectionState> =
+        MutableStateFlow(TopBarSelectionState.NONE)
+    val topBarSelectionState = _topBarSelectionState.asStateFlow()
+
+    fun setTopBarSelectionState(state: TopBarSelectionState) {
+        _topBarSelectionState.update { state }
+    }
 
     val selectedAlbum = NavManager.selectedAlbum
     val username = LastFmManager.username.stateIn(
@@ -34,4 +45,16 @@ class TopBarViewModel : ViewModel() {
             navState = NavManager.navStates
         }
     }
+}
+
+// THESE ARE ALL THE COMBINED POSITIONS THE TOP BAR STATE CAN HAVE
+enum class TopBarSelectionState {
+    NONE,
+    ALBUM_WELCOME,
+    TRACKS_WELCOME
+}
+
+sealed class TopSelectionBars(val entries: List<String>) {
+    data class WelcomeSelectionBar(val titles: List<String> = listOf("Albums", "Tracks")) :
+        TopSelectionBars(titles)
 }

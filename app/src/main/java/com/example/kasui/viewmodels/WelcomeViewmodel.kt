@@ -106,10 +106,10 @@ class WelcomeViewmodel : ViewModel() {
             for (index in selectedAlbumsList.value.indices) {
                 delay(500.milliseconds)
                 val album = rawAlbums.value[index]
-                if (selectedSongAlbumList.value.contains(index)) {
+                if (selectedSongAlbumList.value.contains(index)) { // If the Album is selected as Song Albums
                     if (!album.albumRelationships?.tracks.isNullOrEmpty()) {
                         for (trackIndex in album.albumRelationships.tracks.indices) {
-                            for (rawSongIndex in rawSongs.value.indices) {
+                            for (rawSongIndex in rawSongs.value.indices) { // tracks are fetched from the id to rawsong
                                 if (album.albumRelationships.tracks[trackIndex] == rawSongs.value[rawSongIndex].id) {
                                     val track =
                                         rawSongs.value.firstOrNull { it.id == album.albumRelationships.tracks[trackIndex] }

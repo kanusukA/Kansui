@@ -76,7 +76,6 @@ fun WelcomeScreen(
     val username by welcomeViewmodel.username.collectAsStateWithLifecycle()
     val password by welcomeViewmodel.password.collectAsStateWithLifecycle()
 
-    val lastFmState by mainViewModel.lastfmState.collectAsStateWithLifecycle()
     val mediaManagerState by mainViewModel.mediaManagerState.collectAsStateWithLifecycle()
     val rawAlbumList by mainViewModel.rawAlbums.collectAsStateWithLifecycle()
     val selectedAlbumList by welcomeViewmodel.selectedAlbumsList.collectAsStateWithLifecycle()
@@ -155,27 +154,43 @@ fun WelcomeScreen(
 
     @Composable
     fun searchResultScreen() {
-        LazyColumn(
-            state = lazyColumnState
-        ) {
-            item { Spacer(modifier = Modifier.height(260.dp)) }
-            items(searchResult.size) { index ->
-                val key = searchResult.keys.toList()[index]
-                val value = searchResult[key]
-                val album = rawAlbumList[key]
-                if (value?.albumMatches != null) {
-                    Spacer(modifier = Modifier.height(12.dp))
-                    LastFmSyncCard(
-                        album,
-                        value.albumMatches,
-                        selectedSearchAlbums[index] ?: 0,
-                        onChangeSelection = {
-                            welcomeViewmodel.setSelectedSearchAlbums(index, it)
-                        }
-                    )
+        if (searchResult.isEmpty()) {
+            Box(modifier = Modifier.fillMaxSize()) {
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.Center)
+                        .padding(top = 220.dp),
+                    text = "None Selected",
+                    fontSize = 52.sp,
+                    fontFamily = UncutSans,
+                    fontWeight = FontWeight.Bold,
+                    color = surfaceHighColor
+
+                )
+            }
+        } else {
+            LazyColumn(
+                state = lazyColumnState
+            ) {
+                item { Spacer(modifier = Modifier.height(260.dp)) }
+                items(searchResult.size) { index ->
+                    val key = searchResult.keys.toList()[index]
+                    val value = searchResult[key]
+                    val album = rawAlbumList[key]
+                    if (value?.albumMatches != null) {
+                        Spacer(modifier = Modifier.height(12.dp))
+                        LastFmSyncCard(
+                            album,
+                            value.albumMatches,
+                            selectedSearchAlbums[index] ?: 0,
+                            onChangeSelection = {
+                                welcomeViewmodel.setSelectedSearchAlbums(index, it)
+                            }
+                        )
+                    }
+
                 }
-
-
+                item { Spacer(modifier = Modifier.height(120.dp)) }
             }
         }
     }
@@ -254,6 +269,8 @@ fun WelcomeScreen(
                         )
 
                     }
+                    item { Spacer(modifier = Modifier.height(180.dp)) }
+                    item { Spacer(modifier = Modifier.height(180.dp)) }
                 }
             }
         }

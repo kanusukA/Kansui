@@ -279,7 +279,8 @@ object LastFmManager {
         track: String,
         artist: String?,
         limit: Int = 3
-    ): LastFmSearchTrack? {
+    ): List<LastFmTrack>? // Track is not returned as SearchResult as the search result does not contain album name and image which are almost always required
+    {
         val client = OkHttpClient()
 
         if (!validationCheck()) {
@@ -309,10 +310,19 @@ object LastFmManager {
             val response = client.newCall(request).execute()
             if (response.isSuccessful) {
                 val resultJson = response.body.string()
-                val parsed = JsonParser.parseString(resultJson)
-                Timber.d(gson.toJson(parsed))
+//                val parsed = JsonParser.parseString(resultJson)
+//                Timber.d(gson.toJson(parsed))
                 val result = gson.fromJson(resultJson, LastFmSearchTrack::class.java)
                 Timber.d(gson.toJson(result))
+                val tracks = mutableListOf<LastFmTrack>()
+                result.results?.trackMatches?.track?.forEach {
+                    delay(400.milliseconds)
+                    val trackResult = getTrackInfo(it.name, it.artist)
+                    if (trackResult != null) {
+                        tracks.add(trackResult)
+                    }
+                }
+                return tracks
 
             } else {
                 println("LAST ALBUM SEARCH FAILED : ${response.message} \n ${response.code} \n ${response.body.string()} ")
@@ -424,7 +434,7 @@ object LastFmManager {
                 //Timber.d("RESULT : ${gson.toJson(parsed)}")
 //                println("Result Found : $resultJson")
                 val result = gson.fromJson(resultJson, LastFmTrack::class.java)
-                //Timber.d(gson.toJson(result))
+                Timber.d(gson.toJson(result))
                 return result
 
             } else {

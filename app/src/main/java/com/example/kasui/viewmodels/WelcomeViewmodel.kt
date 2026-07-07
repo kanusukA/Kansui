@@ -6,6 +6,7 @@ import com.example.kasui.Data.LastFm.LASTFM_STATE
 import com.example.kasui.Data.LastFm.LastFmManager
 import com.example.kasui.Data.LastFm.LastFmSearchAlbum
 import com.example.kasui.Data.LastFm.LastFmSearchTrack
+import com.example.kasui.Data.LastFm.LastFmTrack
 import com.example.kasui.Data.request.MediaManager
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
@@ -60,19 +61,26 @@ class WelcomeViewmodel : ViewModel() {
     private var _selectedSearchAlbums = MutableStateFlow<Map<Int, Int>>(emptyMap())
     val selectedSearchAlbums = _selectedSearchAlbums.asStateFlow()
 
+    fun setSelectedSearchAlbums(key: Int, value: Int) {
+        _selectedSearchAlbums.update {
+            _selectedSearchAlbums.value.toMutableMap().apply { put(key, value) }.toMap()
+        }
+    }
+
     // Int - rawSong Index / Track Search result
-    private var _searchSongAlbums = MutableStateFlow<Map<Int, LastFmSearchTrack>>(emptyMap())
+    private var _searchSongAlbums = MutableStateFlow<Map<Int, List<LastFmTrack>>>(emptyMap())
     val searchTrackAlbums = _searchSongAlbums.asStateFlow()
 
     // Int - searchSong Key / LastFmSearchTrack index
     private var _selectedSongSearchTracks = MutableStateFlow<Map<Int, Int>>(emptyMap())
     val selectedSongSearchTracks = _selectedSongSearchTracks.asStateFlow()
 
-    fun setSelectedSearchAlbums(key: Int, value: Int) {
-        _selectedSearchAlbums.update {
-            _selectedSearchAlbums.value.toMutableMap().apply { put(key, value) }.toMap()
+    fun setSelectedSearchTrack(key: Int, value: Int) {
+        _selectedSongSearchTracks.update {
+            _selectedSongSearchTracks.value.toMutableMap().apply { put(key, value) }.toMap()
         }
     }
+
 
     val rawAlbums = MediaManager.rawAlbumList
     val rawSongs = MediaManager.rawSongList
@@ -99,20 +107,20 @@ class WelcomeViewmodel : ViewModel() {
         _selectedSearchAlbums.update { emptyMap() }
         viewModelScope.launch(Dispatchers.IO) {
             val searchMap = mutableMapOf<Int, LastFmSearchAlbum>()
-            val searchSongMap = mutableMapOf<Int, LastFmSearchTrack>()
+            val searchSongMap = mutableMapOf<Int, List<LastFmTrack>>()
             val selectedSearchMap =
                 mutableMapOf<Int, Int>() // Used to prefill the selection Map with 0 index to select first result
             val selectedSearchSongMap = mutableMapOf<Int, Int>()
-            for (index in selectedAlbumsList.value.indices) {
+            for (index in selectedAlbumsList.value) {
                 delay(500.milliseconds)
                 val album = rawAlbums.value[index]
                 if (selectedSongAlbumList.value.contains(index)) { // If the Album is selected as Song Albums
                     if (!album.albumRelationships?.tracks.isNullOrEmpty()) {
-                        for (trackIndex in album.albumRelationships.tracks.indices) {
-                            for (rawSongIndex in rawSongs.value.indices) { // tracks are fetched from the id to rawsong
-                                if (album.albumRelationships.tracks[trackIndex] == rawSongs.value[rawSongIndex].id) {
+                        for (trackId in album.albumRelationships.tracks) {
+                            for (rawSongIndex in rawSongs.value.indices) { // tracks are fetched from the id to rawSong
+                                if (trackId == rawSongs.value[rawSongIndex].id) {
                                     val track =
-                                        rawSongs.value.firstOrNull { it.id == album.albumRelationships.tracks[trackIndex] }
+                                        rawSongs.value.firstOrNull { it.id == trackId }
                                     if (track != null && track.attributes.albumName != null) {
                                         val result = LastFmManager.fetchTrackResults(
                                             track.attributes.albumName,
@@ -124,6 +132,8 @@ class WelcomeViewmodel : ViewModel() {
                                             _searchSongAlbums.update { searchSongMap }
                                             _selectedSongSearchTracks.update { selectedSearchSongMap }
                                         }
+                                        delay(400.milliseconds)
+                                        break
                                     }
                                 }
                             }

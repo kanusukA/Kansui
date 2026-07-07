@@ -1,6 +1,8 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.ksp)
+
 }
 
 android {
@@ -86,13 +88,19 @@ dependencies {
     // Navigation
     implementation(libs.androidx.navigation.compose)
 
-    //Network
+    //Network / JSON
     //implementation(libs.retrofit)
-    implementation(libs.retrofit2.converter.gson)
+//    implementation(libs.retrofit2.converter.gson)
+    implementation(libs.jetbrains.kotlinx.serialization.json)
     implementation(libs.okhttp)
 
     // SAVE SESSION
     implementation(libs.androidx.datastore.preferences)
+
+    //ROOM
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
 
 
     /// REMOVE IN PROD

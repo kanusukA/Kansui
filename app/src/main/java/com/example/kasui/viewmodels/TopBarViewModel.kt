@@ -54,7 +54,12 @@ enum class TopBarSelectionState {
     TRACKS_WELCOME
 }
 
-sealed class TopSelectionBars(val entries: List<String>) {
-    data class WelcomeSelectionBar(val titles: List<String> = listOf("Albums", "Tracks")) :
-        TopSelectionBars(titles)
+sealed class TopSelectionBars(val entries: Map<String, TopBarSelectionState>) {
+    data class WelcomeSelectionBar(
+        val states: Map<String, TopBarSelectionState> = mapOf(
+            "Albums" to TopBarSelectionState.ALBUM_WELCOME,
+            "Tracks" to TopBarSelectionState.TRACKS_WELCOME
+        )
+    ) :
+        TopSelectionBars(states)
 }

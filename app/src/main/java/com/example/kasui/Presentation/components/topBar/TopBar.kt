@@ -59,10 +59,9 @@ import kotlinx.coroutines.async
 
 @Composable
 fun TopBar(
+    topBarViewModel: TopBarViewModel,
     visibility: Boolean
 ) {
-
-    val topBarViewModel: TopBarViewModel = viewModel()
 
     val navState by topBarViewModel.navState.collectAsStateWithLifecycle()
     val mediaState by topBarViewModel.mediaState.collectAsStateWithLifecycle()
@@ -237,24 +236,10 @@ fun TopBar(
                     )
                 )
             } else {
-                SelectionBar(topSelectionBar.entries, 1.0f)
-//                LazyRow() {
-//                    items(topSelectionBar.entries) { entry ->
-//                        Text(
-//                            text = entry,
-//                            fontFamily = ViaodaLibre,
-//                            letterSpacing = (-4).sp,
-//                            style = TextStyle(
-//                                textMotion = TextMotion.Animated,
-//                                fontSize = animatedFontSizeScale.value.sp,
-//                                color = animatedVisibility.value,
-//                                lineHeight = 52.sp
-//                            )
-//                        )
-//                        Spacer(modifier = Modifier.width(48.dp))
-//                    }
-//                    item { Spacer(modifier = Modifier.width(300.dp)) }
-//                }
+                SelectionBar(topSelectionBar.entries, onChanged = { state ->
+                    topBarViewModel.setTopBarSelectionState(state)
+                })
+
             }
         }
 
@@ -266,7 +251,7 @@ fun TopBar(
             Column() {
                 Text(
 
-                    text = username,
+                    text = subHeading,
                     fontFamily = ViaodaLibre,
                     letterSpacing = (-4).sp,
                     style = TextStyle(
@@ -332,5 +317,5 @@ fun TopBar(
 @Preview
 @Composable
 fun previewTopBar() {
-    TopBar(visibility = true)
+//    TopBar(visibility = true)
 }

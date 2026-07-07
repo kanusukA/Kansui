@@ -45,6 +45,7 @@ import com.example.kasui.Presentation.screens.home.HomeScreen
 import com.example.kasui.Presentation.screens.home.WelcomeScreen
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.surfaceColor
+import com.example.kasui.viewmodels.TopBarViewModel
 import com.example.kasui.viewmodels.WelcomeViewmodel
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds
@@ -55,6 +56,8 @@ fun NavScreen() {
 
     val navController = rememberNavController()
 
+    val topBarViewModel: TopBarViewModel = viewModel()
+
     val navState by NavManager.navStates.collectAsStateWithLifecycle()
 
     val selectedAlbum by NavManager.selectedAlbum.collectAsStateWithLifecycle()
@@ -62,7 +65,6 @@ fun NavScreen() {
     var isScrolledPastFirstItem by remember {
         mutableStateOf(false)
     }
-
 
     val animTopGradientIntensity = animateFloatAsState(
         if (isScrolledPastFirstItem) 1f else 0f,
@@ -129,6 +131,7 @@ fun NavScreen() {
                     }
                     WelcomeScreen(
                         welcomeViewmodel = welcomeViewmodel,
+                        topBarViewModel = topBarViewModel,
                         scrollPastFirstItem = {
                             isScrolledPastFirstItem = it
                         }
@@ -204,7 +207,10 @@ fun NavScreen() {
                 intensityTop = animTopGradientIntensity.value
             )
 
-            TopBar(visibility = !isScrolledPastFirstItem)
+            TopBar(
+                topBarViewModel,
+                visibility = !isScrolledPastFirstItem
+            )
 
             BottomBar(
                 welcomeViewmodel = welcomeViewmodel,

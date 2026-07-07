@@ -10,6 +10,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.kasui.Data.LastFm.LASTFM_STATE
 import com.example.kasui.Data.LastFm.LastFmManager
 import com.example.kasui.Data.request.MediaManager
+import com.example.kasui.Data.structure.MusicBrainz.Media
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
 import kotlinx.coroutines.CoroutineScope
@@ -32,6 +33,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     )
     val mediaManagerState = MediaManager.mediaState
     val rawAlbums = MediaManager.rawAlbumList
+    val rawSongs = MediaManager.rawSongList
 
     val loginCoroutine = CoroutineScope(Dispatchers.IO)
 

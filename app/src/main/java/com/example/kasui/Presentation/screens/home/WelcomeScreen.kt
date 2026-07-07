@@ -50,6 +50,7 @@ import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.WelcomeSubRoutes
 import com.example.kasui.Presentation.components.albumCard.AlbumCard
 import com.example.kasui.Presentation.components.albumCard.LastFmSyncCard
+import com.example.kasui.Presentation.components.songCard.LastFmTrackSyncCard
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.UncutSans
@@ -61,6 +62,7 @@ import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.surfaceHighColor
 import com.example.kasui.ui.variantColor
 import com.example.kasui.viewmodels.MainViewModel
+import com.example.kasui.viewmodels.TopBarSelectionState
 import com.example.kasui.viewmodels.TopBarViewModel
 import com.example.kasui.viewmodels.WelcomeViewmodel
 
@@ -68,9 +70,9 @@ import com.example.kasui.viewmodels.WelcomeViewmodel
 @Composable
 fun WelcomeScreen(
     welcomeViewmodel: WelcomeViewmodel,
+    topBarViewModel: TopBarViewModel,
     scrollPastFirstItem: (Boolean) -> Unit
 ) {
-
     val mainViewModel: MainViewModel = viewModel()
 
     val username by welcomeViewmodel.username.collectAsStateWithLifecycle()
@@ -78,11 +80,17 @@ fun WelcomeScreen(
 
     val mediaManagerState by mainViewModel.mediaManagerState.collectAsStateWithLifecycle()
     val rawAlbumList by mainViewModel.rawAlbums.collectAsStateWithLifecycle()
+    val rawSongList by mainViewModel.rawSongs.collectAsStateWithLifecycle()
     val selectedAlbumList by welcomeViewmodel.selectedAlbumsList.collectAsStateWithLifecycle()
     val selectedSongAlbumList by welcomeViewmodel.selectedSongAlbumList.collectAsStateWithLifecycle()
+
     val selectedSearchAlbums by welcomeViewmodel.selectedSearchAlbums.collectAsStateWithLifecycle()
+    val selectedSearchTracks by welcomeViewmodel.selectedSongSearchTracks.collectAsStateWithLifecycle()
+
+    val topBarState by topBarViewModel.topBarSelectionState.collectAsStateWithLifecycle()
 
     val searchResult by welcomeViewmodel.searchAlbum.collectAsStateWithLifecycle()
+    val searchTrackResult by welcomeViewmodel.searchTrackAlbums.collectAsStateWithLifecycle()
 
     val currentNavRoute by NavManager.navStates.collectAsStateWithLifecycle()
 
@@ -154,7 +162,9 @@ fun WelcomeScreen(
 
     @Composable
     fun searchResultScreen() {
-        if (searchResult.isEmpty()) {
+        if ((searchResult.isEmpty() && topBarState == TopBarSelectionState.ALBUM_WELCOME)
+            || (searchTrackResult.isEmpty() && topBarState == TopBarSelectionState.TRACKS_WELCOME)
+        ) {
             Box(modifier = Modifier.fillMaxSize()) {
                 Text(
                     modifier = Modifier
@@ -173,22 +183,46 @@ fun WelcomeScreen(
                 state = lazyColumnState
             ) {
                 item { Spacer(modifier = Modifier.height(260.dp)) }
-                items(searchResult.size) { index ->
-                    val key = searchResult.keys.toList()[index]
-                    val value = searchResult[key]
-                    val album = rawAlbumList[key]
-                    if (value?.albumMatches != null) {
-                        Spacer(modifier = Modifier.height(12.dp))
-                        LastFmSyncCard(
-                            album,
-                            value.albumMatches,
-                            selectedSearchAlbums[index] ?: 0,
-                            onChangeSelection = {
-                                welcomeViewmodel.setSelectedSearchAlbums(index, it)
+                when (topBarState) {
+                    TopBarSelectionState.NONE -> {}
+                    TopBarSelectionState.ALBUM_WELCOME -> {
+                        items(searchResult.size) { index ->
+                            val key = searchResult.keys.toList()[index]
+                            val value = searchResult[key]
+                            val album = rawAlbumList[key]
+                            if (value?.albumMatches != null) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                LastFmSyncCard(
+                                    album,
+                                    value.albumMatches,
+                                    selectedSearchAlbums[index] ?: 0,
+                                    onChangeSelection = {
+                                        welcomeViewmodel.setSelectedSearchAlbums(index, it)
+                                    }
+                                )
                             }
-                        )
+
+                        }
                     }
 
+                    TopBarSelectionState.TRACKS_WELCOME -> {
+                        items(searchTrackResult.size) { index ->
+                            val key = searchTrackResult.keys.toList()[index]
+                            val value = searchTrackResult[key]
+                            val song = rawSongList[key]
+                            if (value != null) {
+                                Spacer(modifier = Modifier.height(12.dp))
+                                LastFmTrackSyncCard(
+                                    song,
+                                    value,
+                                    selectedSearchTracks[index] ?: 0
+                                ) {
+                                    welcomeViewmodel.setSelectedSearchTrack(index, it)
+                                }
+                            }
+
+                        }
+                    }
                 }
                 item { Spacer(modifier = Modifier.height(120.dp)) }
             }

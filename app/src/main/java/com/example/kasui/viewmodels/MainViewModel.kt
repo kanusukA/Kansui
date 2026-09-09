@@ -53,7 +53,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         if (lastfmState.value == LASTFM_STATE.SIGNED_IN) {
             println("ALREADY LOGGED IN")
             when (NavManager.navStates.value) {
-                is NavRoutes.WelcomeLogin -> NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
+                //is NavRoutes.WelcomeLogin -> NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
+                is NavRoutes.WelcomeLogin -> NavManager.changeNavState(NavRoutes.Home())
                 else -> {}
             }
             return
@@ -70,8 +71,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
                 password
             )
             if (result) {
-
-                NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
+                NavManager.changeNavState(NavRoutes.Home())
             }
         }
 

@@ -34,21 +34,21 @@ data class AlbumEntity(
     val recordLabel: String? = null
 )
 
-@Entity(primaryKeys = ["albumId", "trackId"])
-data class AlbumTrackCross(
-    val albumId: Long,
-    val trackId: Long
-)
-
-data class kAlbum(
-    @PrimaryKey val albumEntity: AlbumEntity,
-    @Relation(
-        parentColumn = "id",
-        entityColumn = "id",
-        associateBy = Junction(AlbumTrackCross::class)
-    )
-
-)
+//@Entity(primaryKeys = ["albumId", "trackId"])
+//data class AlbumTrackCross(
+//    val albumId: Long,
+//    val trackId: Long
+//)
+//
+//data class kAlbum(
+//    @PrimaryKey val albumEntity: AlbumEntity,
+//    @Relation(
+//        parentColumn = "id",
+//        entityColumn = "id",
+//        associateBy = Junction(AlbumTrackCross::class)
+//    )
+//
+//)
 
 
 class Album(

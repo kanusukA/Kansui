@@ -72,6 +72,10 @@ fun NavScreen() {
         animationSpec = tween(durationMillis = 400, delayMillis = 0)
     )
 
+    LaunchedEffect(true) {
+        NavManager.changeNavState(NavRoutes.Home())
+    }
+
     LaunchedEffect(navState) {
         println("navChange ${navState.popBack}")
         if (navState.popBack) {
@@ -101,7 +105,7 @@ fun NavScreen() {
         Box(modifier = Modifier.fillMaxSize()) {
             NavHost(
                 navController = navController,
-                startDestination = NavRoutes.WelcomeLogin().route// Define the initial screen
+                startDestination = NavRoutes.Home().route// Define the initial screen
             ) {
 
                 composable(route = NavRoutes.WelcomeLogin().route) {

@@ -59,39 +59,39 @@ fun HomeScreen(
             Spacer(modifier = Modifier.height(120.dp))
         }
 
-//        items(albumList.size) { index ->
-//            val albumSelected by remember(selectedAlbums.size) {
-//                mutableStateOf(selectedAlbums.contains(index))
-//            }
-//            AlbumCard(
-//                albumName = albumList[index].albumAttributes.albumName,
-//                artistName = albumList[index].albumAttributes.artistName,
-//                artwork = albumList[index].albumAttributes.artwork,
-//                selected = albumSelected,
-//                onClick = {
-//                    homeViewModel.navToAlbumScreen(albumList[index])
-//                },
-//                onSelected = { bool ->
-//                    if (bool) {
-//                        selectedAlbums.remove(index)
-//                    } else {
-//                        selectedAlbums.add(index)
-//                    }
-//                },
-//                selectionCount = selectedAlbums.indexOfFirst { it == index } + 1,
-//                onClickSelection = selectedAlbums.isNotEmpty()
-//            )
-//        }
-
-        searchAlbumResult.forEach { (i, albums) ->
-
-            item {
-                SelectionAlbumCard(
-                    albumList[i],
-                    albums[0]
-                )
+        items(albumList.size) { index ->
+            val albumSelected by remember(selectedAlbums.size) {
+                mutableStateOf(selectedAlbums.contains(index))
             }
+            AlbumCard(
+                albumName = albumList[index].albumAttributes.albumName,
+                artistName = albumList[index].albumAttributes.artistName,
+                artwork = albumList[index].albumAttributes.artwork,
+                selected = albumSelected,
+                onClick = {
+                    homeViewModel.navToAlbumScreen(albumList[index])
+                },
+                onSelected = { bool ->
+                    if (bool) {
+                        selectedAlbums.remove(index)
+                    } else {
+                        selectedAlbums.add(index)
+                    }
+                },
+                selectionCount = "",
+                onClickSelection = selectedAlbums.isNotEmpty()
+            )
         }
+
+//        searchAlbumResult.forEach { (i, albums) ->
+//
+//            item {
+//                SelectionAlbumCard(
+//                    albumList[i],
+//                    albums[0]
+//                )
+//            }
+//        }
 
 
     }

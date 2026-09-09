@@ -8,9 +8,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import com.example.kasui.Data.local.LAST_API_KEY
 import com.example.kasui.Data.local.LAST_API_SECRET
-import com.google.gson.Gson
-import com.google.gson.GsonBuilder
-import com.google.gson.JsonParser
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -25,6 +22,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
 import okhttp3.FormBody
 import okhttp3.HttpUrl
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
@@ -52,9 +50,9 @@ object LastFmManager {
 
     private val SESSION_KEY = stringPreferencesKey("session_key")
 
-    private val gson = GsonBuilder()
-        .setPrettyPrinting()
-        .create()
+//    private val gson = GsonBuilder()
+//        .setPrettyPrinting()
+//        .create()
 
 
     @Serializable
@@ -78,6 +76,8 @@ object LastFmManager {
     private var _lastFmState: MutableStateFlow<LASTFM_STATE> =
         MutableStateFlow(LASTFM_STATE.SIGNED_OUT)
     val lastFmState = _lastFmState.asStateFlow()
+
+    private val json = Json { prettyPrint = true }
 
     private val lockMutex = Mutex()
     private var _apiLock = false;
@@ -142,7 +142,8 @@ object LastFmManager {
         session.collect { sessionString ->
             if (!sessionString.isNullOrEmpty()) {
                 _currentSession.update {
-                    Gson().fromJson(sessionString, SessionKey::class.java)
+                    json.decodeFromString<SessionKey>(sessionString)
+//                    Gson().fromJson(sessionString, SessionKey::class.java)
                 }
                 _lastFmState.update { LASTFM_STATE.SIGNED_IN }
             }
@@ -190,7 +191,6 @@ object LastFmManager {
         val url = LastFmApi.toHttpUrlOrNull()?.newBuilder()
         url?.scheme("https")
 
-
         val request = Request.Builder()
             .post(form)
             .url(url!!.build())
@@ -203,7 +203,10 @@ object LastFmManager {
 
             if (response.isSuccessful) {
                 val result = response.body.string()
-                _currentSession.update { Gson().fromJson(result, SessionKey::class.java) }
+                _currentSession.update {
+//                    Gson().fromJson(result, SessionKey::class.java)
+                    json.decodeFromString<SessionKey>(result);
+                }
                 saveSessionKey(context, result)
                 println(_currentSession)
                 _lastFmState.update { LASTFM_STATE.SIGNED_IN }
@@ -260,8 +263,8 @@ object LastFmManager {
             if (response.isSuccessful) {
                 val resultJson = response.body.string()
                 println("Result Found : $resultJson")
-                return Gson().fromJson(resultJson, LastFmSearchAlbumResult::class.java).results
-
+//                return Gson().fromJson(resultJson, LastFmSearchAlbumResult::class.java).results
+                return json.decodeFromString<LastFmSearchAlbumResult>(resultJson).results
             } else {
                 println("LAST ALBUM SEARCH FAILED : ${response.message} \n ${response.code} \n ${response.body.string()} ")
             }
@@ -312,8 +315,9 @@ object LastFmManager {
                 val resultJson = response.body.string()
 //                val parsed = JsonParser.parseString(resultJson)
 //                Timber.d(gson.toJson(parsed))
-                val result = gson.fromJson(resultJson, LastFmSearchTrack::class.java)
-                Timber.d(gson.toJson(result))
+//                val result = gson.fromJson(resultJson, LastFmSearchTrack::class.java)
+                val result = json.decodeFromString<LastFmSearchTrack>(resultJson)
+                Timber.d(json.encodeToString(result))
                 val tracks = mutableListOf<LastFmTrack>()
                 result.results?.trackMatches?.track?.forEach {
                     delay(400.milliseconds)
@@ -378,7 +382,8 @@ object LastFmManager {
                 //val parsed = JsonParser.parseString(resultJson)
                 //Timber.d("RESULT : ${gson.toJson(parsed)}")
 //                println("Result Found : $resultJson")
-                val result = gson.fromJson(resultJson, LastFmAlbum::class.java)
+//                val result = gson.fromJson(resultJson, LastFmAlbum::class.java)
+                val result = json.decodeFromString<LastFmAlbum>(resultJson)
                 //  Timber.d(gson.toJson(result))
                 return result
             } else {
@@ -430,11 +435,13 @@ object LastFmManager {
             val response = client.newCall(request).execute()
             if (response.isSuccessful) {
                 val resultJson = response.body.string()
-                val parsed = JsonParser.parseString(resultJson)
+//                val parsed = JsonParser.parseString(resultJson)
                 //Timber.d("RESULT : ${gson.toJson(parsed)}")
 //                println("Result Found : $resultJson")
-                val result = gson.fromJson(resultJson, LastFmTrack::class.java)
-                Timber.d(gson.toJson(result))
+//                val result = gson.fromJson(resultJson, LastFmTrack::class.java)
+//                Timber.d(gson.toJson(result))
+                val result = json.decodeFromString<LastFmTrack>(resultJson)
+                Timber.d(json.encodeToString(result))
                 return result
 
             } else {

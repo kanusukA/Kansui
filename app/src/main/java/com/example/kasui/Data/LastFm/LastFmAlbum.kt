@@ -1,6 +1,7 @@
 package com.example.kasui.Data.LastFm
 
-import com.google.gson.annotations.SerializedName
+//import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 
@@ -26,7 +27,7 @@ class LastFmAlbumInfo(
     val id: String?,
     val mbid: String?,
     val url: String?,
-    @SerializedName("releasedate")
+    @SerialName("releasedate")
     val releaseDate: String?,
     val image: List<LastFmImage>?,
     val listeners: String?,
@@ -48,9 +49,9 @@ class LastFmSearchAlbumResult(
 
 @Serializable
 class LastFmSearchAlbum(
-    @SerializedName("opensearch:totalResults")
+    @SerialName("opensearch:totalResults")
     val total: Int?,
-    @SerializedName("albummatches")
+    @SerialName("albummatches")
     val albumMatches: LastFmSearchAlbumMatch?
 )
 
@@ -70,7 +71,7 @@ class LastFmSearchAlbumItem(
 
 @Serializable
 class LastFmImage(
-    @SerializedName("#text")
+    @SerialName("#text")
     val url: String?,
     val size: String?,
 )

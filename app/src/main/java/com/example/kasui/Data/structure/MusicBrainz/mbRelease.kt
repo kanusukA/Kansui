@@ -1,9 +1,11 @@
 package com.example.kasui.Data.structure.MusicBrainz
 
 
-import com.google.gson.annotations.SerializedName
+//import com.google.gson.annotations.SerializedName
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializer
 
 @Serializable
 data class MbSearchRelease(
@@ -15,10 +17,10 @@ data class MbSearchRelease(
 data class mbSearchReleaseItem(
     val title: String?,
     val id: String,
-    @SerializedName("status-id") val statusId: String? = null,
-    @SerializedName("artist-credit-id") val artistCreditId: String? = null,
-    @SerializedName("artist-credit") val artistCredit: List<mbSearchArtistCredit> = emptyList(),
-    @SerializedName("track-count") val trackCount: Int,
+    @SerialName("status-id") val statusId: String? = null,
+    @SerialName("artist-credit-id") val artistCreditId: String? = null,
+    @SerialName("artist-credit") val artistCredit: List<mbSearchArtistCredit> = emptyList(),
+    @SerialName("track-count") val trackCount: Int,
 )
 
 @Serializable
@@ -31,7 +33,7 @@ data class mbSearchArtistCredit(
 data class mbSearchArtist(
     val id: String,
     val name: String,
-    @SerializedName("sort-name") val sortName: String,
+    @SerialName("sort-name") val sortName: String,
     val disambiguation: String? = null
 )
 
@@ -51,12 +53,12 @@ data class MbReleaseDetail(
     val annotation: String? = null,
     val tags: List<Tag> = emptyList(),
 
-    @SerializedName("status-id") val statusId: String? = null,
-    @SerializedName("packaging-id") val packagingId: String? = null,
-    @SerializedName("text-representation") val textRepresentation: TextRepresentation? = null,
-    @SerializedName("artist-credit") val artistCredit: List<ArtistCredit> = emptyList(),
-    @SerializedName("release-events") val releaseEvents: List<ReleaseEvent> = emptyList(),
-    @SerializedName("cover-art-archive") val coverArtArchive: CoverArtArchive? = null,
+    @SerialName("status-id") val statusId: String? = null,
+    @SerialName("packaging-id") val packagingId: String? = null,
+    @SerialName("text-representation") val textRepresentation: TextRepresentation? = null,
+    @SerialName("artist-credit") val artistCredit: List<ArtistCredit> = emptyList(),
+    @SerialName("release-events") val releaseEvents: List<ReleaseEvent> = emptyList(),
+    @SerialName("cover-art-archive") val coverArtArchive: CoverArtArchive? = null,
     val media: List<Media> = emptyList()
 )
 
@@ -80,8 +82,8 @@ data class Artist(
     val country: String? = null,
     val type: String? = null,
     val disambiguation: String? = null,
-    @SerializedName("sort-name") val sortName: String,
-    @SerializedName("type-id") val typeId: String? = null
+    @SerialName("sort-name") val sortName: String,
+    @SerialName("type-id") val typeId: String? = null
 )
 
 @Serializable
@@ -96,9 +98,9 @@ data class Area(
     val name: String? = null,
     val type: String? = null,
     val disambiguation: String? = null,
-    @SerializedName("sort-name") val sortName: String? = null,
-    @SerializedName("type-id") val typeId: String? = null,
-    @SerializedName("iso-3166-1-codes") val iso31661Codes: List<String> = emptyList()
+    @SerialName("sort-name") val sortName: String? = null,
+    @SerialName("type-id") val typeId: String? = null,
+    @SerialName("iso-3166-1-codes") val iso31661Codes: List<String> = emptyList()
 )
 
 @Serializable
@@ -120,7 +122,7 @@ data class CoverArtArchive(
 data class Media(
     val id: String,
     val format: String? = null, // e.g., "Digital Media", "CD"
-    @SerializedName("track-count") val trackCount: Int,
+    @SerialName("track-count") val trackCount: Int,
     val tracks: List<Track> = emptyList()
 )
 
@@ -131,7 +133,7 @@ data class Track(
     val number: String, // Kept as String because vinyl tracks use "A1", "B1"
     val title: String,
     val length: Long? = null, // Track duration in milliseconds
-    @SerializedName("artist-credit") val artistCredit: List<ArtistCredit> = emptyList(),
+    @SerialName("artist-credit") val artistCredit: List<ArtistCredit> = emptyList(),
     val recording: Recording? = null
 )
 
@@ -142,8 +144,8 @@ data class Recording(
     val length: Long? = null,
     val video: Boolean = false,
     val disambiguation: String? = null,
-    @SerializedName("first-release-date") val firstReleaseDate: String? = null,
-    @SerializedName("artist-credit") val artistCredit: List<ArtistCredit> = emptyList()
+    @SerialName("first-release-date") val firstReleaseDate: String? = null,
+    @SerialName("artist-credit") val artistCredit: List<ArtistCredit> = emptyList()
 )
 
 @Serializable
@@ -167,9 +169,9 @@ data class CoverArtImage(
 
 @Serializable
 data class Thumbnails(
-    @SerializedName("1200") val size1200: String? = null,
-    @SerializedName("500") val size500: String? = null,
-    @SerializedName("250") val size250: String? = null,
+    @SerialName("1200") val size1200: String? = null,
+    @SerialName("500") val size500: String? = null,
+    @SerialName("250") val size250: String? = null,
     val large: String? = null,
     val small: String? = null
 )

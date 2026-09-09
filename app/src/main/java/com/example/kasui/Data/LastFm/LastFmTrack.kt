@@ -1,6 +1,7 @@
 package com.example.kasui.Data.LastFm
 
-import com.google.gson.annotations.SerializedName
+//import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 //  /2.0/?method=track.getInfo&api_key=YOUR_API_KEY&artist=cher&track=believe&format=json
@@ -74,7 +75,7 @@ class LastFmSearchTrack(
 @Serializable
 class LastFmSearchTrackResult(
     val totalResults: String?,
-    @SerializedName("trackmatches")
+    @SerialName("trackmatches")
     val trackMatches: LastFmSearchTrackMatches?
 )
 

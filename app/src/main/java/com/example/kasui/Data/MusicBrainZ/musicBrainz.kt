@@ -1,10 +1,10 @@
 package com.example.kasui.Data.MusicBrainZ
 
-import com.example.kasui.Data.NetworkManager
+//import com.example.kasui.Data.NetworkManager
 import com.example.kasui.Data.structure.MusicBrainz.CoverArtResponse
 import com.example.kasui.Data.structure.MusicBrainz.MbReleaseDetail
 import com.example.kasui.Data.structure.MusicBrainz.MbSearchRelease
-import com.google.gson.Gson
+//import com.google.gson.Gson
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
@@ -14,6 +14,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import kotlinx.serialization.json.Json
 import okhttp3.Call
 import okhttp3.Callback
 import okhttp3.Dispatcher
@@ -41,6 +42,8 @@ object musicBrainz {
 
     private var _apiLock = false
     private val _apiScope = CoroutineScope(Dispatchers.IO)
+
+    private val json = Json { prettyPrint = true }
 
     private suspend fun setApiLock() {
         mutex.withLock {
@@ -141,8 +144,8 @@ object musicBrainz {
             val response = client.newCall(request).execute()
             val result = response.body.string()
             println("RESPONSE : ${result}")
-            return Gson().fromJson(result, MbSearchRelease::class.java)
-
+//            return Gson().fromJson(result, MbSearchRelease::class.java)
+            return json.decodeFromString<MbSearchRelease>(result)
         } catch (e: IOException) {
             println("ERROR PROCESSING REQUEST : ${e.message} \n ${e.printStackTrace()}")
         } catch (e: Exception) {
@@ -168,7 +171,8 @@ object musicBrainz {
             val response = client.newCall(request).execute()
             val result = response.body.string()
             println("RESPONSE : ${result}")
-            return Gson().fromJson(result, CoverArtResponse::class.java)
+//            return Gson().fromJson(result, CoverArtResponse::class.java)
+            return json.decodeFromString<CoverArtResponse>(result)
         } catch (e: IOException) {
             println("ERROR PROCESSING REQUEST : ${e.message} \n ${e.printStackTrace()}")
         } catch (e: Exception) {
@@ -189,7 +193,8 @@ object musicBrainz {
             val response = client.newCall(request).execute()
             val result = response.body.string()
             println("RESPONSE : ${result}")
-            return Gson().fromJson(result, MbReleaseDetail::class.java)
+//            return Gson().fromJson(result, MbReleaseDetail::class.java)
+            return json.decodeFromString<MbReleaseDetail>(result)
         } catch (e: IOException) {
             println("ERROR PROCESSING REQUEST : ${e.message} \n ${e.printStackTrace()}")
         } catch (e: Exception) {

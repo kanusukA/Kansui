@@ -258,7 +258,7 @@ fun BottomBar(
             },
         hiddenComposable = {
 
-            if (navState.navRoute != NavRoutes.WelcomeLogin().route) {
+            if (navState.navRoute == NavRoutes.Album().route) {
                 BottomBarTab(
                     modifier = Modifier,
                     R.drawable.arrow_back, "Back", true,

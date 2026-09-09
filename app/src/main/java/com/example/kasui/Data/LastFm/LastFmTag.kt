@@ -1,6 +1,7 @@
 package com.example.kasui.Data.LastFm
 
-import com.google.gson.annotations.SerializedName
+//import com.google.gson.annotations.SerializedName
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 // /2.0/?method=tag.getinfo&tag=disco&api_key=YOUR_API_KEY&format=json
@@ -28,7 +29,7 @@ class LastFmTag(
 
 @Serializable
 class LastFmSimilarTags(
-    @SerializedName("tag")
+    @SerialName("tag")
     val tags: List<LastFmTag>?
 )
 
@@ -48,7 +49,7 @@ class LastFmTagTopAlbums(
 
 @Serializable
 class LastFmTagTopAlbumItem(
-    val rank: Any,
+    val rank: String?,
     val name: String?,
     val mbid: String?,
     val url: String?,
@@ -62,7 +63,7 @@ class LastFmTagArtist(
     val name: String?,
     val mbid: String?,
     val url: String?,
-    val rank: Any,
+    val rank: String?,
     val image: List<LastFmImage>?
 )
 
@@ -87,7 +88,7 @@ class LastFmTagTopArtists(
 
 @Serializable
 class LastFmTopTags(
-    @SerializedName("tag")
+    @SerialName("tag")
     val topTags: List<LastFmTag>?
 )
 

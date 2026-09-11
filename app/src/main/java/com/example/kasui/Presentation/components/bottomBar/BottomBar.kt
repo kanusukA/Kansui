@@ -42,6 +42,7 @@ import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
@@ -68,6 +69,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -140,6 +142,7 @@ fun BottomBar(
     @Composable
     fun HomeScreenTabs() {
         BottomBarTab(
+
             icon = R.drawable.home,
             title = "Home",
             selected = navState.navRoute == NavRoutes.Home().route,
@@ -234,7 +237,11 @@ fun BottomBar(
         }
     }
 
-
+//    Row(
+//
+//    ) {
+//        HomeScreenTabs()
+//    }
 
     Krow(
         modifier = modifier
@@ -258,18 +265,19 @@ fun BottomBar(
             },
         hiddenComposable = {
 
-            if (navState.navRoute == NavRoutes.Album().route) {
-                BottomBarTab(
-                    modifier = Modifier,
-                    R.drawable.arrow_back, "Back", true,
-                    onHold = onHold,
-                    dragPositionY,
-                    onClick = {
-                        bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true))
-                    })
-            }
+//            if (navState.navRoute == NavRoutes.Album().route) {
+//                BottomBarTab(
+//                    modifier = Modifier,
+//                    R.drawable.arrow_back, "Back", true,
+//                    onHold = onHold,
+//                    dragPositionY,
+//                    onClick = {
+//                        bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true))
+//                    })
+//            }
         },
         visible = showBackTab,
+        space = 2.dp,
         exitTransition = slideOutHorizontally(
             targetOffsetX = { it },
             animationSpec = tween(durationMillis = 2000)
@@ -283,18 +291,22 @@ fun BottomBar(
             else -> HomeScreenTabs()
         }
 
-//        AnimatedVisibility(
-//            showBackTab,
-//            enter = scaleIn() + slideInHorizontally(
-//                initialOffsetX = { it }),
-//            exit = scaleOut() + slideOutHorizontally(targetOffsetX = { it })
-//        ) {
-//            BottomBarTab(
-//                R.drawable.arrow_back, "Back", true,
-//                onHold = onHold,
-//                dragPositionY,
-//                onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true)) })
-//        }
+        AnimatedVisibility(
+            showBackTab,
+            enter = scaleIn() + slideInHorizontally(
+                initialOffsetX = { it }),
+            exit = scaleOut() + slideOutHorizontally(targetOffsetX = { it })
+        ) {
+            BottomBarTab(
+                icon = R.drawable.arrow_back,
+                title = "Back",
+                selected = true,
+                onHold = onHold,
+                dragPositionY = dragPositionY,
+                onClick = {
+                    bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true))
+                })
+        }
     }
 
 }
@@ -340,7 +352,12 @@ private fun BottomBarTab(
 
     val animatedDragPosition = animateDpAsState(if (onDragSelected && onHold) 24.dp else 0.dp)
 
-    Box(modifier = modifier.requiredHeight(42.dp), contentAlignment = Alignment.Center) {
+    Box(
+        modifier = modifier
+            .requiredHeight(42.dp)
+            .widthIn(max = if (selected) Dp.Unspecified else 64.dp),
+        contentAlignment = Alignment.Center
+    ) {
         Row(
             modifier = Modifier
                 .height(42.dp)
@@ -366,7 +383,7 @@ private fun BottomBarTab(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceEvenly
         ) {
-            Spacer(modifier.width(16.dp))
+            Spacer(modifier.width(12.dp))
             if (icon != null) {
                 Box(
                     Modifier

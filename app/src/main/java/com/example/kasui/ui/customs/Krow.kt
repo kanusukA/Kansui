@@ -27,6 +27,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.Layout
 import androidx.compose.ui.layout.Placeable
+import androidx.compose.ui.unit.Dp
+import androidx.compose.ui.unit.dp
 import kotlin.math.max
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -36,6 +38,7 @@ fun Krow(
     hiddenComposable: @Composable () -> Unit = {},
     visible: Boolean = false,
     hidden: Boolean = false,
+    space: Dp = 0.dp,
     entry: EnterTransition = scaleIn() + slideInHorizontally(
         initialOffsetX = { it }),
     exitTransition: ExitTransition = scaleOut() + slideOutHorizontally(targetOffsetX = { it }),
@@ -131,7 +134,7 @@ fun Krow(
 
 
         // Spaced Evenly
-        spacing = ((layoutWidth - rowWidth) / (items)).toInt()
+        spacing = (((layoutWidth - rowWidth) / (items)).toInt()) + space.toPx().toInt()
 
         layout(layoutWidth, layoutHeight) {
             var xPosition = spacing

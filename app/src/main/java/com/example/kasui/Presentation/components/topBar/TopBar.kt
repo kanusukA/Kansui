@@ -82,31 +82,7 @@ fun TopBar(
 
     var headingText by remember(navState, mediaState) {
         mutableStateOf(
-            value = "Kansui"
-//                if (navState.navRoute == NavRoutes.WelcomeLogin().route) {
-//                    "Welcome"
-//                } else {
-//                    when (navState) {
-//                        is NavRoutes.Album -> {
-//                            fontSizeScale = 64f
-//                            selectedAlbum?.albumAttributes?.albumName ?: ""
-//                        }
-//
-//                        is NavRoutes.Search -> "Search"
-//                        else -> {
-//                            if (mediaState == MediaManagerState.LOADING_RAW) {
-//                                "Loading"
-//                            } else {
-//                                fontSizeScale = 85f
-//                                "Kansui"
-//                            }
-//
-//                        }
-//
-//                    }
-//                }
-
-
+            value = "kansui"
         )
     }
 
@@ -132,7 +108,7 @@ fun TopBar(
     LaunchedEffect(navState, mediaState) {
         when (navState) {
             is NavRoutes.Album -> {
-                headingText = "Kansui"
+                headingText = selectedAlbum?.albumAttributes?.albumName ?: ""
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
             }
 

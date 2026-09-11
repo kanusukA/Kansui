@@ -9,6 +9,10 @@ import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyStaggeredGridState
+import androidx.compose.foundation.lazy.staggeredgrid.LazyVerticalStaggeredGrid
+import androidx.compose.foundation.lazy.staggeredgrid.StaggeredGridCells
+import androidx.compose.foundation.lazy.staggeredgrid.rememberLazyStaggeredGridState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
@@ -32,11 +36,9 @@ fun HomeScreen(
 ) {
     val homeViewModel: HomeViewModel = viewModel()
 
-    val lazyState = rememberLazyGridState()
+    val lazyState: LazyStaggeredGridState = rememberLazyStaggeredGridState()
 
     val albumList by homeViewModel.albumsList.collectAsStateWithLifecycle()
-
-    val searchAlbumResult by homeViewModel.albumResult.collectAsStateWithLifecycle()
 
     val selectedAlbums = remember {
         mutableStateListOf<Int>()
@@ -50,11 +52,7 @@ fun HomeScreen(
         scrollPastFirstItem(isScrolledPastFirstItem)
     }
 
-    LazyColumn(
-        //state = lazyState,
-        //columns = GridCells.Fixed(2)
-    ) {
-        //SPACER
+    LazyVerticalStaggeredGrid(columns = StaggeredGridCells.Fixed(2), state = lazyState) {
         items(2) {
             Spacer(modifier = Modifier.height(120.dp))
         }
@@ -82,20 +80,7 @@ fun HomeScreen(
                 onClickSelection = selectedAlbums.isNotEmpty()
             )
         }
-
-//        searchAlbumResult.forEach { (i, albums) ->
-//
-//            item {
-//                SelectionAlbumCard(
-//                    albumList[i],
-//                    albums[0]
-//                )
-//            }
-//        }
-
-
     }
-
 
 }
 

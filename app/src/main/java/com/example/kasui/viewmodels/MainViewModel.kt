@@ -1,6 +1,7 @@
 package com.example.kasui.viewmodels
 
 import android.app.Application
+import android.content.Context
 import android.os.Build
 import androidx.annotation.RequiresExtension
 import androidx.lifecycle.AndroidViewModel
@@ -38,7 +39,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val loginCoroutine = CoroutineScope(Dispatchers.IO)
 
 
-    fun initMain() {
+    fun initMain(context: Context) {
+        MediaManager.initRepo(context)
+        
         viewModelScope.launch(Dispatchers.IO) {
             LastFmManager.loadSessionKey(application.applicationContext)
         }

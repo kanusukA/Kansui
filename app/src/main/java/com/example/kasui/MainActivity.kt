@@ -76,7 +76,7 @@ class MainActivity : AppCompatActivity() {
             val mainViewModel: MainViewModel = viewModel()
 
             LaunchedEffect(Unit) {
-                mainViewModel.initMain()
+                mainViewModel.initMain(applicationContext)
             }
 
             val coroutineScope = rememberCoroutineScope()

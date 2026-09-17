@@ -59,7 +59,7 @@ data class MbReleaseDetail(
     @SerialName("artist-credit") val artistCredit: List<ArtistCredit> = emptyList(),
     @SerialName("release-events") val releaseEvents: List<ReleaseEvent> = emptyList(),
     @SerialName("cover-art-archive") val coverArtArchive: CoverArtArchive? = null,
-    val media: List<Media> = emptyList()
+//    val media: List<Media> = emptyList()
 )
 
 @Serializable
@@ -118,24 +118,24 @@ data class CoverArtArchive(
     val darkened: Boolean = false
 )
 
-@Serializable
-data class Media(
-    val id: String,
-    val format: String? = null, // e.g., "Digital Media", "CD"
-    @SerialName("track-count") val trackCount: Int,
-    val tracks: List<Track> = emptyList()
-)
+//@Serializable
+//data class Media(
+//    val id: String,
+//    val format: String? = null, // e.g., "Digital Media", "CD"
+//    @SerialName("track-count") val trackCount: Int,
+//    val tracks: List<Track> = emptyList()
+//)
 
-@Serializable
-data class Track(
-    val id: String,
-    val position: Int,
-    val number: String, // Kept as String because vinyl tracks use "A1", "B1"
-    val title: String,
-    val length: Long? = null, // Track duration in milliseconds
-    @SerialName("artist-credit") val artistCredit: List<ArtistCredit> = emptyList(),
-    val recording: Recording? = null
-)
+//@Serializable
+//data class Track(
+//    val id: String,
+//    val position: Int,
+//    val number: String, // Kept as String because vinyl tracks use "A1", "B1"
+//    val title: String,
+//    val length: Long? = null, // Track duration in milliseconds
+//    @SerialName("artist-credit") val artistCredit: List<ArtistCredit> = emptyList(),
+//    val recording: Recording? = null
+//)
 
 @Serializable
 data class Recording(

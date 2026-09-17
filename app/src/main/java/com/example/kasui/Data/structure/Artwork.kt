@@ -4,37 +4,39 @@ import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
+import androidx.room.Entity
+import androidx.room.Ignore
 import coil3.Bitmap
 import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.textColor
 import com.example.kasui.ui.textOnSurface
 
-class Artwork(
-    val height: Int,
-    val width: Int,
-    val url: String? = null,
-    val uri: Uri? = null,
-    val bitmap: Bitmap? = null,
+
+data class Artwork(
+    var height: Int = 0,
+    var width: Int = 0,
+    var url: String? = null,
+    var uri: Uri? = null,
+    @Ignore var bitmap: Bitmap? = null,
     var bgColor: Color? = null,
     var textColor1: Color? = null,
     var textColor2: Color? = null, // opposite to textColor1
-    val textColor3: String? = null,
-    val textColor4: String? = null,
+    var textColor3: String? = null,
+    var textColor4: String? = null,
 ) {
-
-    init {
+    fun calColor() {
         var rgb = mutableListOf(0f, 0f, 0f)
 
         if (bitmap != null) {
-            val pixelsArray = IntArray(bitmap.width * bitmap.height)
-            bitmap.getPixels(
+            val pixelsArray = IntArray(bitmap!!.width * bitmap!!.height)
+            bitmap!!.getPixels(
                 pixelsArray,
                 0,
-                bitmap.width,
+                bitmap!!.width,
                 0,
                 0,
-                bitmap.width,
-                bitmap.height
+                bitmap!!.width,
+                bitmap!!.height
             )
             for (pixel in pixelsArray) {
                 val color = Color(pixel)
@@ -61,7 +63,6 @@ class Artwork(
             textColor2 = TitleDarkColor
 
         }
-
     }
 
 }

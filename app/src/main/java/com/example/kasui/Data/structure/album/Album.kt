@@ -2,12 +2,14 @@ package com.example.kasui.Data.structure.album
 
 import androidx.room.Embedded
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.Junction
 import androidx.room.PrimaryKey
 import androidx.room.Relation
 import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.Data.structure.EditorialNotes
 import com.example.kasui.Data.structure.Genre
+import com.example.kasui.Data.structure.song.Track
 
 
 @Entity(tableName = "albums")
@@ -16,23 +18,69 @@ data class AlbumEntity(
     val href: String,
     val artistName: String,
     val albumName: String,
-    val genreNames: List<Genre>,
+//    val genreNames: List<Genre>,
     val isSingle: Boolean,
     val isCompilation: Boolean,
     val isComplete: Boolean,
     val url: String,
-    val trackCount: Int,
     @Embedded(prefix = "artwork_") val artwork: Artwork,
 
-    val audioVariants: List<String>? = null,
+//    val audioVariants: List<String>? = null,
     val artistUrl: String? = null,
     val contentRating: String? = null,
-    val editorialNotes: EditorialNotes? = null,
+//    val editorialNotes: EditorialNotes? = null,
     val inFavorites: Boolean? = null,
 
     val releaseDate: String? = null,
     val recordLabel: String? = null
 )
+
+@Entity(
+    tableName = "album_genre_cross_ref",
+    primaryKeys = ["albumId", "genreId"],
+    indices = [
+        Index(value = ["albumId"]),
+        Index(value = ["genreId"])
+    ]
+)
+data class AlbumGenreCrossRef(
+    val albumId: Long,
+    val genreId: Long
+)
+
+@Entity(
+    tableName = "album_track_cross_ref",
+    primaryKeys = ["albumId", "trackId"],
+    indices = [
+        Index(value = ["albumId"]),
+        Index(value = ["trackId"])
+    ]
+)
+data class AlbumTrackCrossRef(
+    val albumId: Long,
+    val trackId: Long
+)
+
+
+data class Album(
+    @Embedded val album: AlbumEntity,
+    @Relation(
+        parentColumn = "genreId",
+        entityColumn = "albumId",
+        associateBy = Junction(AlbumGenreCrossRef::class)
+    )
+    val genres: List<Genre>,
+
+    @Relation(
+        parentColumn = "albumId",
+        entityColumn = "trackId",
+        associateBy = Junction(AlbumTrackCrossRef::class)
+    )
+    val tracks: List<Track>
+
+
+)
+
 
 //@Entity(primaryKeys = ["albumId", "trackId"])
 //data class AlbumTrackCross(
@@ -51,15 +99,16 @@ data class AlbumEntity(
 //)
 
 
-class Album(
-    val id: Long,
-    val href: String,
-    val albumAttributes: AlbumAttributes,
-    val albumRelationships: AlbumRelationships?,
-    val albumViews: AlbumViews?
-)
+//class Album(
+//    val id: Long,
+//    val href: String,
+//    val albumAttributes: AlbumAttributes,
+//    val albumRelationships: AlbumRelationships?,
+//    val albumViews: AlbumViews?
+//)
 
-data class AlbumAttributes(
+
+class AlbumAttributes(
     // Required
     val artistName: String,
     val albumName: String,

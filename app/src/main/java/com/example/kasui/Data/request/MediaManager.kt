@@ -14,6 +14,8 @@ import androidx.core.database.getStringOrNull
 import androidx.lifecycle.Lifecycle
 import coil3.Bitmap
 import com.example.kasui.Data.MusicBrainZ.musicBrainz
+import com.example.kasui.Data.local.AlbumDatabase
+import com.example.kasui.Data.local.AlbumRepository
 import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.Data.structure.album.Album
 import com.example.kasui.Data.structure.album.AlbumAttributes
@@ -35,6 +37,14 @@ import kotlin.time.Duration.Companion.milliseconds
 
 // ALL INFO FETCHED AND STORED USES ALBUM AS THE STARTING POINT
 object MediaManager {
+
+    private var albumRepository: AlbumRepository? = null
+
+    fun initRepo(context: Context) {
+        val albumDb = AlbumDatabase.getInstance(context)
+        albumRepository = AlbumRepository(albumDb.getAlbumDao())
+    }
+
 
     private var _rawSongList = MutableStateFlow(listOf<Song>())
     val rawSongList: StateFlow<List<Song>> = _rawSongList
@@ -182,22 +192,21 @@ object MediaManager {
                 var index: Int? = null
 
                 albumList.forEachIndexed { i, album ->
-                    if (album.id == cursor.getLong(ALBUM_ID_Index)) {
+                    if (album.album.id == cursor.getLong(ALBUM_ID_Index)) {
                         index = i
                     }
                 }
 
                 if (index != null) {
-                    albumList[index].albumRelationships?.tracks?.add(song.id)
-                    albumList[index].albumAttributes.trackCount =
-                        albumList[index].albumRelationships?.tracks?.size ?: 0
+                    albumList[index].album
+
                 } else {
 
                     val artwork = Artwork(
                         height = 600,
                         width = 600,
                         url = null,
-                        uri = null,
+                        uri = musicUri,
                         bitmap = bitmap,
                         bgColor = null,
                         textColor1 = null,
@@ -234,11 +243,7 @@ object MediaManager {
                     )
 
                     val album = Album(
-                        id = cursor.getLong(ALBUM_ID_Index),
-                        href = "",
-                        albumAttributes = albumAttributes,
-                        albumRelationships = albumRelationships,
-                        albumViews = AlbumViews(emptyList(), emptyList())
+                        album =
                     )
 
                     albumList.add(album)

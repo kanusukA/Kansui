@@ -9,18 +9,17 @@ import com.example.kasui.Data.structure.Genre
 
 
 @Entity(tableName = "tracks")
-data class Tracks(
+data class Track(
     @PrimaryKey val id: Long,
     val albumName: String?,
     val artistName: String?,
     val artistUrl: String?,
-    val artwork: Artwork?,
     val attribution: String?, // (Classical music only) The name of the artist or composer to attribute the song with.
-    val audioVariants: List<String>?,
+//    val audioVariants: List<String>?,
     val composerName: String?,
     val contentRating: String?,
     val discNumber: Int?, // Album Disc number
-    val editorialNotes: EditorialNotes?,
+//    val editorialNotes: EditorialNotes?,
     val inFavorites: Boolean?,
     val releaseDate: String?,
     val trackNumber: Int?,
@@ -29,7 +28,7 @@ data class Tracks(
     //Required
     val name: String,
     val durationInMillis: Int,
-    val genreNames: List<Genre>,
+//    val genreNames: List<Genre>,
     val hasLyrics: Boolean,
     val uri: Uri
 )

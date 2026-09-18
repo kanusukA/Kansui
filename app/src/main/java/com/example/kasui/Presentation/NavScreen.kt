@@ -42,6 +42,7 @@ import com.example.kasui.Presentation.components.bottomBar.BottomBar
 import com.example.kasui.Presentation.components.topBar.TopBar
 import com.example.kasui.Presentation.screens.home.AlbumScreen
 import com.example.kasui.Presentation.screens.home.HomeScreen
+import com.example.kasui.Presentation.screens.home.PlayerView
 import com.example.kasui.Presentation.screens.home.WelcomeScreen
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.surfaceColor
@@ -140,7 +141,7 @@ fun NavScreen(
                         welcomeViewmodel = welcomeViewmodel,
                         topBarViewModel = topBarViewModel,
                         scrollPastFirstItem = {
-                            isScrolledPastFirstItem = it
+                            NavManager.setTopBarVisibility(!it)
                         }
                     )
                 }
@@ -156,7 +157,7 @@ fun NavScreen(
                     HomeScreen(
                         mainViewModel.homeViewModel,
                         scrollPastFirstItem = {
-                            isScrolledPastFirstItem = it
+                            NavManager.setTopBarVisibility(!it)
                         }
                     )
                 }
@@ -170,9 +171,7 @@ fun NavScreen(
                         }
                     }
                     // Reconstruct the typed object from the back stack entry
-                    AlbumScreen(selectedAlbum!!, scrollPastFirstItem = {
-                        isScrolledPastFirstItem = it
-                    })
+                    AlbumScreen(selectedAlbum!!, {})
                 }
 
                 composable(route = NavRoutes.Search().route) {
@@ -185,7 +184,7 @@ fun NavScreen(
                     HomeScreen(
                         mainViewModel.homeViewModel,
                         scrollPastFirstItem = {
-                            isScrolledPastFirstItem = it
+                            NavManager.setTopBarVisibility(!it)
                         }
                     )
                 }
@@ -200,7 +199,7 @@ fun NavScreen(
                     HomeScreen(
                         mainViewModel.homeViewModel,
                         scrollPastFirstItem = {
-                            isScrolledPastFirstItem = it
+                            NavManager.setTopBarVisibility(!it)
                         }
                     )
                 }
@@ -219,8 +218,8 @@ fun NavScreen(
 
             TopBar(
                 topBarViewModel,
-                visibility = !isScrolledPastFirstItem
             )
+
 
             BottomBar(
                 welcomeViewmodel = welcomeViewmodel,
@@ -228,6 +227,9 @@ fun NavScreen(
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 24.dp, vertical = 16.dp)
             )
+
+            PlayerView(modifier = Modifier.align(Alignment.BottomCenter))
+
 
         }
 

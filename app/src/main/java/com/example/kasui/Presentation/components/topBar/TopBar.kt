@@ -42,9 +42,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kasui.Data.request.MediaManagerState
+import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.NavState
 import com.example.kasui.Presentation.WelcomeSubRoutes
+import com.example.kasui.Presentation.screens.home.AlbumScreenState
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
@@ -60,8 +62,8 @@ import kotlinx.coroutines.async
 @Composable
 fun TopBar(
     topBarViewModel: TopBarViewModel,
-    visibility: Boolean
-) {
+
+    ) {
 
     val navState by topBarViewModel.navState.collectAsStateWithLifecycle()
     val mediaState by topBarViewModel.mediaState.collectAsStateWithLifecycle()
@@ -69,10 +71,15 @@ fun TopBar(
 
     val username by topBarViewModel.username.collectAsStateWithLifecycle()
 
+    val albumScreenState by NavManager.albumScreenState.collectAsStateWithLifecycle()
+    val visibility by NavManager.topBarVisibility.collectAsStateWithLifecycle()
 
     val animatedVisibility = remember { Animatable(TitleColor) }
+    var TopPadding by remember {
+        mutableStateOf(0.dp)
+    }
     val animatedTopPadding =
-        animateDpAsState(if (navState.navRoute == NavRoutes.Album().route) 180.dp else 0.dp)
+        animateDpAsState(TopPadding)
 
     var fontSizeScale by remember { mutableFloatStateOf(85f) }
     val animatedFontSizeScale =
@@ -105,30 +112,56 @@ fun TopBar(
         mutableStateOf(TopSelectionBars.WelcomeSelectionBar())
     }
 
+    LaunchedEffect(albumScreenState) {
+        TopPadding = when (albumScreenState) {
+            AlbumScreenState.TRACK_VIEW -> {
+                NavManager.setTopBarVisibility(visibility = false)
+                180.dp
+            }
+
+            AlbumScreenState.COVER_VIEW -> {
+                NavManager.setTopBarVisibility(visibility = true)
+                0.dp
+            }
+
+            AlbumScreenState.DEFAULT -> {
+                NavManager.setTopBarVisibility(visibility = true)
+                180.dp
+            }
+        }
+    }
+
+
     LaunchedEffect(navState, mediaState) {
         when (navState) {
             is NavRoutes.Album -> {
                 headingText = selectedAlbum?.album?.albumName ?: ""
+                TopPadding = 180.dp
+                NavManager.setTopBarVisibility(true)
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
             }
 
             is NavRoutes.Home -> {
                 headingText = "Kansui"
+                TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
             }
 
             is NavRoutes.Library -> {
                 headingText = "Kansui"
+                TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
             }
 
             is NavRoutes.Search -> {
                 headingText = "Search"
+                TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
             }
 
             is NavRoutes.WelcomeLogin -> {
                 headingText = "Welcome"
+                TopPadding = 0.dp
                 subHeading = if (username.isNotEmpty()) username else "Kansui"
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
             }
@@ -136,12 +169,14 @@ fun TopBar(
             is NavRoutes.WelcomeSearchAlbum -> {
                 headingText = "Welcome"
                 subHeading = ""
+                TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.ALBUM_WELCOME)
             }
 
             is NavRoutes.WelcomeSetupAlbum -> {
                 headingText = "Welcome"
                 subHeading = if (username.isNotEmpty()) username else "Kansui"
+                TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
             }
         }

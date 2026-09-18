@@ -1,6 +1,7 @@
 package com.example.kasui.Presentation
 
 import com.example.kasui.Data.structure.album.Album
+import com.example.kasui.Presentation.screens.home.AlbumScreenState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -79,6 +80,22 @@ object NavManager {
     fun navToAlbumView(album: Album) {
         _selectedAlbum.update { album }
         changeNavState(NavRoutes.Album())
+    }
+
+    // INTER_VIEWMODEL_VARIABLES
+    private var _albumScreenState: MutableStateFlow<AlbumScreenState> =
+        MutableStateFlow(AlbumScreenState.DEFAULT)
+    val albumScreenState = _albumScreenState.asStateFlow()
+
+    private var _topBarVisibility = MutableStateFlow(true)
+    val topBarVisibility = _topBarVisibility.asStateFlow()
+
+    fun setAlbumScreenState(albumScreenState: AlbumScreenState) {
+        _albumScreenState.update { albumScreenState }
+    }
+
+    fun setTopBarVisibility(visibility: Boolean) {
+        _topBarVisibility.update { visibility }
     }
 
 }

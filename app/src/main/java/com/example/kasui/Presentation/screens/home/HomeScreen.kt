@@ -80,6 +80,10 @@ fun HomeScreen(
                 onClickSelection = selectedAlbums.isNotEmpty()
             )
         }
+
+        items(2) {
+            Spacer(modifier = Modifier.height(320.dp))
+        }
     }
 
 }

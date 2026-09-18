@@ -44,6 +44,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -246,8 +247,15 @@ fun BottomBar(
     Krow(
         modifier = modifier
             .requiredHeight(56.dp)
-            .clip(shape = CircleShape)
-            .background(surfaceHighColor.copy(alpha = 0.85f), shape = CircleShape)
+//            .clip(shape = CircleShape)
+            .background(
+                surfaceHighColor.copy(alpha = 0.85f), shape = RoundedCornerShape(
+                    topStart = 12.dp,
+                    bottomStart = 36.dp,
+                    topEnd = 12.dp,
+                    bottomEnd = 36.dp
+                )
+            )
             .pointerInput(Unit) {
 
                 detectDragGesturesAfterLongPress(

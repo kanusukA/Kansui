@@ -1,6 +1,8 @@
 package com.example.kasui.Presentation.screens.home
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -8,6 +10,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -39,6 +42,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -46,6 +50,7 @@ import coil3.compose.AsyncImage
 import com.example.kasui.Data.request.MediaManager
 import com.example.kasui.Data.structure.album.Album
 import com.example.kasui.Data.structure.song.Song
+import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.components.songCard.SongCard
 import com.example.kasui.R
 import com.example.kasui.ui.TitleColor
@@ -57,7 +62,7 @@ import com.example.kasui.ui.textColor
 @Composable
 fun AlbumScreen(
     album: Album,
-    scrollPastFirstItem: (Boolean) -> Unit
+    onAlbumScreenState: (AlbumScreenState) -> Unit
 ) {
 
     val lazyState = rememberLazyListState()
@@ -67,6 +72,10 @@ fun AlbumScreen(
 
     val screenHeightDpFloat = with(density) { configuration.height.toPx() }
 
+    var albumScreenState: AlbumScreenState by remember {
+        mutableStateOf(AlbumScreenState.DEFAULT)
+    }
+
 //    val songList = MediaManager.fetchSongsFromAlbum(album)
     val tracks by album.tracks.collectAsStateWithLifecycle(initialValue = emptyList())
 
@@ -74,14 +83,24 @@ fun AlbumScreen(
         derivedStateOf { lazyState.firstVisibleItemIndex > 0 }
     }
 
-    var gradientPositionY by remember() {
-        mutableFloatStateOf(screenHeightDpFloat * 0.55f)
+    var gradientPositionY by remember(albumScreenState) {
+        mutableFloatStateOf(
+            when (albumScreenState) {
+                AlbumScreenState.COVER_VIEW -> screenHeightDpFloat * 1f
+                AlbumScreenState.TRACK_VIEW -> screenHeightDpFloat * 0f
+                AlbumScreenState.DEFAULT -> screenHeightDpFloat * 0.55f
+            }
+
+        )
     }
 
     val animatedGradientY = animateFloatAsState(gradientPositionY)
+    val animatedTrackColumnOffset =
+        animateDpAsState(if (albumScreenState == AlbumScreenState.COVER_VIEW) 80.dp else 0.dp)
 
-    LaunchedEffect(isScrolledPastFirstItem) {
-        scrollPastFirstItem(isScrolledPastFirstItem)
+    LaunchedEffect(albumScreenState) {
+        onAlbumScreenState(albumScreenState)
+        NavManager.setAlbumScreenState(albumScreenState)
     }
 
     var imageSize by remember {
@@ -94,9 +113,9 @@ fun AlbumScreen(
                 // Calculate the change in image size based on scroll delta
                 if (lazyState.layoutInfo.visibleItemsInfo.first().offset < 0) {
                     if (isScrolledPastFirstItem) {
-                        gradientPositionY = screenHeightDpFloat * 0.22f
+                        albumScreenState = AlbumScreenState.TRACK_VIEW
                     } else {
-                        gradientPositionY = screenHeightDpFloat * 0.55f
+                        albumScreenState = AlbumScreenState.DEFAULT
                     }
 
                     return Offset.Zero
@@ -111,9 +130,9 @@ fun AlbumScreen(
                 val consumed = imageSize - previousImageSize
 
                 if (imageSize == 400.dp) {
-                    gradientPositionY = screenHeightDpFloat * 0.95f
+                    albumScreenState = AlbumScreenState.COVER_VIEW
                 } else {
-                    gradientPositionY = screenHeightDpFloat * 0.55f
+                    albumScreenState = AlbumScreenState.DEFAULT
                 }
 
                 // Calculate the scale for the image
@@ -128,19 +147,30 @@ fun AlbumScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
+            .offset(y = animatedTrackColumnOffset.value)
             .background(color = album.album.artwork.bgColor ?: surfaceColor)
-            .nestedScroll(nestedScrollConnection)
     ) {
         AsyncImage(
             modifier = Modifier
+                .padding(top = 64.dp)
                 .size(imageSize)
-                .padding(top = 12.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .align(alignment = Alignment.TopCenter),
             model = album.album.artwork.bitmap,
             contentDescription = null,
-            contentScale = ContentScale.FillWidth
+            contentScale = ContentScale.Crop,
+            clipToBounds = true
         )
+    }
+
+    Box(
+        modifier = Modifier
+            .fillMaxSize()
+            .offset(y = animatedTrackColumnOffset.value + (animatedTrackColumnOffset.value * 2))
+
+            .nestedScroll(nestedScrollConnection)
+    ) {
+
 
         Box(
             modifier = Modifier
@@ -160,7 +190,8 @@ fun AlbumScreen(
 
 
         LazyColumn(
-            modifier = Modifier.padding(horizontal = 12.dp),
+            modifier = Modifier
+                .padding(horizontal = 12.dp),
             state = lazyState
         ) {
             item {
@@ -189,6 +220,13 @@ fun AlbumScreen(
 
 
     }
+}
+
+
+enum class AlbumScreenState {
+    TRACK_VIEW,
+    COVER_VIEW,
+    DEFAULT
 }
 
 @Preview

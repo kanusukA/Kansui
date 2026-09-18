@@ -17,7 +17,9 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
 
-class TopBarViewModel : ViewModel() {
+class TopBarViewModel(
+    
+) : ViewModel() {
     // EXTERNAL
     lateinit var navState: StateFlow<NavRoutes>
 

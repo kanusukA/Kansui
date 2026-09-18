@@ -22,6 +22,7 @@ class HomeViewModel(
 
     val albumResult = MediaManager.searchAlbumList
 
+
     fun navToAlbumScreen(album: Album) {
         NavManager.navToAlbumView(album)
     }

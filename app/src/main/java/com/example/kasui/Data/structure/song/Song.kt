@@ -13,17 +13,17 @@ data class Track(
     @PrimaryKey val id: Long,
     val albumName: String?,
     val artistName: String?,
-    val artistUrl: String?,
-    val attribution: String?, // (Classical music only) The name of the artist or composer to attribute the song with.
+    val artistUrl: String? = null,
+    val attribution: String? = null, // (Classical music only) The name of the artist or composer to attribute the song with.
 //    val audioVariants: List<String>?,
-    val composerName: String?,
-    val contentRating: String?,
-    val discNumber: Int?, // Album Disc number
+    val composerName: String? = null,
+    val contentRating: String? = null,
+    val discNumber: Int? = null, // Album Disc number
 //    val editorialNotes: EditorialNotes?,
-    val inFavorites: Boolean?,
-    val releaseDate: String?,
-    val trackNumber: Int?,
-    val url: String?,
+    val inFavorites: Boolean? = null,
+    val releaseDate: String? = null,
+    val trackNumber: Int? = null,
+    val url: String? = null,
 
     //Required
     val name: String,

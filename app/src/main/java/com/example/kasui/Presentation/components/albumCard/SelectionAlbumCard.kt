@@ -8,8 +8,10 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.kasui.Data.structure.album.Album
 
@@ -18,9 +20,14 @@ fun SelectionAlbumCard(
     mediaAlbum: Album,
     mbAlbum: Album
 ) {
-    Column(modifier = Modifier
-        .height(104.dp)
-        .fillMaxWidth()) {
+
+    val tracks by mediaAlbum.tracks.collectAsStateWithLifecycle(initialValue = emptyList())
+
+    Column(
+        modifier = Modifier
+            .height(104.dp)
+            .fillMaxWidth()
+    ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -28,14 +35,14 @@ fun SelectionAlbumCard(
         ) {
             AsyncImage(
                 modifier = Modifier.size(52.dp),
-                model = mediaAlbum.albumAttributes.artwork.bitmap,
+                model = mediaAlbum.album.artwork.bitmap,
                 contentDescription = null
             )
 
             Column(verticalArrangement = Arrangement.SpaceEvenly) {
-                Text(mediaAlbum.albumAttributes.albumName)
-                Text(mediaAlbum.albumAttributes.artistName)
-                Text(mediaAlbum.albumAttributes.trackCount.toString())
+                Text(mediaAlbum.album.albumName)
+                Text(mediaAlbum.album.artistName)
+                Text(tracks.size.toString())
             }
         }
         Row(
@@ -43,17 +50,17 @@ fun SelectionAlbumCard(
                 .fillMaxWidth()
                 .height(52.dp)
         ) {
-            AsyncImage(
-                modifier = Modifier.size(52.dp),
-                model = mbAlbum.albumAttributes.artwork.url,
-                contentDescription = null
-            )
-
-            Column(verticalArrangement = Arrangement.SpaceEvenly) {
-                Text(mbAlbum.albumAttributes.albumName)
-                Text(mbAlbum.albumAttributes.artistName)
-                Text(mbAlbum.albumAttributes.trackCount.toString())
-            }
+//            AsyncImage(
+//                modifier = Modifier.size(52.dp),
+//                model = mbAlbum.albu.artwork.url,
+//                contentDescription = null
+//            )
+//
+//            Column(verticalArrangement = Arrangement.SpaceEvenly) {
+//                Text(mbAlbum.albumAttributes.albumName)
+//                Text(mbAlbum.albumAttributes.artistName)
+//                Text(mbAlbum.albumAttributes.trackCount.toString())
+//            }
         }
     }
 

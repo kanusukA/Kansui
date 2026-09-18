@@ -32,39 +32,46 @@ import kotlinx.coroutines.launch
 interface AlbumDao {
 
     @Query("SELECT * FROM albums")
-    fun getAllAlbumEntities(): Flow<AlbumEntity>
+    fun getAllAlbumEntities(): Flow<List<AlbumEntity>>
 
     @Query("SELECT * FROM genres")
-    fun getAllGenres(): Flow<Genre>
+    fun getAllGenres(): Flow<List<Genre>>
 
     @Query("SELECT * FROM genres WHERE id = :id")
     suspend fun getGenre(id: Long): Genre?
 
     @Transaction
     @Query("SELECT * FROM album_genre_cross_ref WHERE albumId = :albumId")
-    fun getAlbumGenres(albumId: Long): Flow<AlbumGenreCrossRef>
+    fun getAlbumGenres(albumId: Long): Flow<List<AlbumGenreCrossRef>>
 
     @Query("SELECT * FROM tracks")
-    fun getAllTracks(): Flow<Track>
+    fun getAllTracks(): Flow<List<Track>>
 
     @Query("SELECT * FROM tracks WHERE id = :id")
     suspend fun getTrack(id: Long): Track?
 
     @Transaction
     @Query("SELECT * FROM album_track_cross_ref WHERE albumId = :albumId")
-    fun getAlbumTracks(albumId: Long): Flow<AlbumTrackCrossRef>
+    fun getAlbumTracks(albumId: Long): Flow<List<AlbumTrackCrossRef>>
 
 
-    suspend fun getAllAlbums(): Flow<Album> {
-        return getAllAlbumEntities().map { albumEntity ->
-            Album(
-                album = albumEntity,
-                genres = getAlbumGenres(albumEntity.id).map { genreRef -> getGenre(genreRef.genreId) }
-                    .filterNotNull().toList(),
-                tracks = getAlbumTracks(albumEntity.id).map { albumTrackCrossRef ->
-                    getTrack(albumTrackCrossRef.trackId)
+    fun getAllAlbums(): Flow<List<Album>> = getAllAlbumEntities().map { albums ->
+        albums.map {
+            val tracks = getAlbumTracks(it.id).map { trackIds ->
+                trackIds.mapNotNull { trackId ->
+                    getTrack(trackId.trackId)
                 }
-                    .filterNotNull().toList()
+            }
+            val genres = getAlbumGenres(it.id).map { genreIds ->
+                genreIds.mapNotNull { genreId ->
+                    getGenre(genreId.genreId)
+                }
+            }
+
+            Album(
+                album = it,
+                genres = genres,
+                tracks = tracks
             )
         }
     }
@@ -87,17 +94,17 @@ interface AlbumDao {
     suspend fun insertAlbumTrackCrossRef(albumTrackCrossRefs: List<AlbumTrackCrossRef>)
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun insertAlbum(album: Album) {
-        insertAlbumEntity(album.album)
-        insertGenres(album.genres)
-        val crossRef = album.genres.map { it ->
-            AlbumGenreCrossRef(album.album.id, it.id)
+    suspend fun insertAlbum(album: AlbumEntity, genres: List<Genre>, tracks: List<Track>) {
+        insertAlbumEntity(album)
+        insertGenres(genres)
+        val crossRef = genres.map { it ->
+            AlbumGenreCrossRef(album.id, it.id)
         }
         insertAlbumGenreCrossRef(crossRef)
 
-        insertTracks(album.tracks)
-        val crossRefTracks = album.tracks.map {
-            AlbumTrackCrossRef(albumId = album.album.id, trackId = it.id)
+        insertTracks(tracks)
+        val crossRefTracks = tracks.map {
+            AlbumTrackCrossRef(albumId = album.id, trackId = it.id)
         }
 
         insertAlbumTrackCrossRef(crossRefTracks)
@@ -119,7 +126,7 @@ interface AlbumDao {
     version = 1,
     exportSchema = false
 )
-@TypeConverters(UriConverter::class)
+@TypeConverters(UriConverter::class, ColorConverter::class)
 abstract class AlbumDatabase : RoomDatabase() {
 
     abstract fun getAlbumDao(): AlbumDao
@@ -151,13 +158,13 @@ abstract class AlbumDatabase : RoomDatabase() {
 
 class AlbumRepository(private val albumDao: AlbumDao) {
 
-    val allAlbums = MutableLiveData<List<AlbumEntity>>()
-    val foundAlbums = MutableLiveData<AlbumEntity>()
+    val albums: Flow<List<Album>> = getAllAlbums()
+
     private val coroutineScope = CoroutineScope(Dispatchers.Main)
 
-    fun addAlbum(nAlbum: Album) {
+    fun addAlbum(nAlbum: AlbumEntity, genres: List<Genre>, tracks: List<Track>) {
         coroutineScope.launch(Dispatchers.IO) {
-            albumDao.insertAlbum(nAlbum)
+            albumDao.insertAlbum(nAlbum, genres, tracks)
         }
     }
 
@@ -167,5 +174,8 @@ class AlbumRepository(private val albumDao: AlbumDao) {
         }
     }
 
+    fun getAllAlbums(): Flow<List<Album>> {
+        return albumDao.getAllAlbums()
+    }
 
 }

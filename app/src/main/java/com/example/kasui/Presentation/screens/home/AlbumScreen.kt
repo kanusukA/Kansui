@@ -41,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.kasui.Data.request.MediaManager
 import com.example.kasui.Data.structure.album.Album
@@ -66,7 +67,8 @@ fun AlbumScreen(
 
     val screenHeightDpFloat = with(density) { configuration.height.toPx() }
 
-    val songList = MediaManager.fetchSongsFromAlbum(album)
+//    val songList = MediaManager.fetchSongsFromAlbum(album)
+    val tracks by album.tracks.collectAsStateWithLifecycle(initialValue = emptyList())
 
     val isScrolledPastFirstItem by remember {
         derivedStateOf { lazyState.firstVisibleItemIndex > 0 }
@@ -126,7 +128,7 @@ fun AlbumScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(color = album.albumAttributes.artwork.bgColor ?: surfaceColor)
+            .background(color = album.album.artwork.bgColor ?: surfaceColor)
             .nestedScroll(nestedScrollConnection)
     ) {
         AsyncImage(
@@ -135,7 +137,7 @@ fun AlbumScreen(
                 .padding(top = 12.dp)
                 .clip(RoundedCornerShape(20.dp))
                 .align(alignment = Alignment.TopCenter),
-            model = album.albumAttributes.artwork.bitmap,
+            model = album.album.artwork.bitmap,
             contentDescription = null,
             contentScale = ContentScale.FillWidth
         )
@@ -155,14 +157,7 @@ fun AlbumScreen(
                 )
         )
 
-//        Text(
-//            modifier = Modifier.padding(top = 160.dp),
-//            text = album.albumAttributes.albumName,
-//            fontFamily = ViaodaLibre,
-//            fontSize = 68.sp,
-//            color = TitleColor,
-//            style = TextStyle(letterSpacing = -4.sp)
-//        )
+
 
         LazyColumn(
             modifier = Modifier.padding(horizontal = 12.dp),
@@ -174,21 +169,15 @@ fun AlbumScreen(
             item {
                 Spacer(modifier = Modifier.height(350.dp))
             }
-            items(songList.size) { index ->
+            items(tracks.size) { index ->
                 Text(
-                    songList[index].attributes.name,
+                    tracks[index].name,
                     fontFamily = UncutSans,
                     fontSize = 20.sp,
                     color = textColor,
                     fontWeight = FontWeight.Medium
                 )
-//                SongCard(
-//                    title = songList[index].attributes.name,
-//                    album = songList[index].attributes.albumName ?: "Unknown Album",
-//                    artist = songList[index].attributes.artistName ?: "Unknows Artist",
-//                    artwork = album.albumAttributes.artwork,
-//                    albumView = true
-//                )
+
                 Spacer(Modifier.height(12.dp))
                 HorizontalDivider()
                 Spacer(Modifier.height(12.dp))

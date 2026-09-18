@@ -10,6 +10,7 @@ import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.Data.structure.EditorialNotes
 import com.example.kasui.Data.structure.Genre
 import com.example.kasui.Data.structure.song.Track
+import kotlinx.coroutines.flow.Flow
 
 
 @Entity(tableName = "albums")
@@ -61,7 +62,7 @@ data class AlbumTrackCrossRef(
     val trackId: Long
 )
 
-
+// VIEW ONLY
 data class Album(
     @Embedded val album: AlbumEntity,
     @Relation(
@@ -69,16 +70,21 @@ data class Album(
         entityColumn = "albumId",
         associateBy = Junction(AlbumGenreCrossRef::class)
     )
-    val genres: List<Genre>,
+    val genres: Flow<List<Genre>>,
 
     @Relation(
         parentColumn = "albumId",
         entityColumn = "trackId",
         associateBy = Junction(AlbumTrackCrossRef::class)
     )
-    val tracks: List<Track>
+    val tracks: Flow<List<Track>>
 
+)
 
+data class InsertAlbum(
+    val albumEntity: AlbumEntity,
+    val tracks: MutableList<Track>,
+    val genre: MutableList<Genre>
 )
 
 

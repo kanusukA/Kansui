@@ -101,71 +101,72 @@ class WelcomeViewmodel : ViewModel() {
         mainViewModel.loginLastFm(username.value, password.value)
     }
 
+    @Deprecated(message = "NO LASTFM!")
     fun albumSyncLastFm() {
-        NavManager.changeNavState(NavRoutes.WelcomeSearchAlbum())
-        _searchAlbums.update { emptyMap() }
-        _selectedSearchAlbums.update { emptyMap() }
-        viewModelScope.launch(Dispatchers.IO) {
-            val searchMap = mutableMapOf<Int, LastFmSearchAlbum>()
-            val searchSongMap = mutableMapOf<Int, List<LastFmTrack>>()
-            val selectedSearchMap =
-                mutableMapOf<Int, Int>() // Used to prefill the selection Map with 0 index to select first result
-            val selectedSearchSongMap = mutableMapOf<Int, Int>()
-            for (index in selectedAlbumsList.value) {
-                delay(500.milliseconds)
-                val album = rawAlbums.value[index]
-                if (selectedSongAlbumList.value.contains(index)) { // If the Album is selected as Song Albums
-                    if (!album.albumRelationships?.tracks.isNullOrEmpty()) {
-                        for (trackId in album.albumRelationships.tracks) {
-                            for (rawSongIndex in rawSongs.value.indices) { // tracks are fetched from the id to rawSong
-                                if (trackId == rawSongs.value[rawSongIndex].id) {
-                                    val track =
-                                        rawSongs.value.firstOrNull { it.id == trackId }
-                                    if (track != null && track.attributes.albumName != null) {
-                                        val result = LastFmManager.fetchTrackResults(
-                                            track.attributes.albumName,
-                                            track.attributes.artistName
-                                        )
-                                        if (result != null) {
-                                            searchSongMap[rawSongIndex] = result
-                                            selectedSearchSongMap[rawSongIndex] = 0
-                                            _searchSongAlbums.update { searchSongMap }
-                                            _selectedSongSearchTracks.update { selectedSearchSongMap }
-                                        }
-                                        delay(400.milliseconds)
-                                        break
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                } else {
-
-
-                    val result =
-                        LastFmManager.fetchAlbumResults(
-                            album.albumAttributes.albumName,
-                            artist = album.albumAttributes.artistName,
-                            limit = 3
-                        )
-
-                    if (result != null) {
-                        selectedSearchMap[index] = 0
-                        searchMap[index] = result
-                        _selectedSearchAlbums.update { selectedSearchMap }
-                        _searchAlbums.update { searchMap.toMap() }
-
-
-                    }
-
-                }
-
-
-            }
-
-
-        }
+//        NavManager.changeNavState(NavRoutes.WelcomeSearchAlbum())
+//        _searchAlbums.update { emptyMap() }
+//        _selectedSearchAlbums.update { emptyMap() }
+//        viewModelScope.launch(Dispatchers.IO) {
+//            val searchMap = mutableMapOf<Int, LastFmSearchAlbum>()
+//            val searchSongMap = mutableMapOf<Int, List<LastFmTrack>>()
+//            val selectedSearchMap =
+//                mutableMapOf<Int, Int>() // Used to prefill the selection Map with 0 index to select first result
+//            val selectedSearchSongMap = mutableMapOf<Int, Int>()
+//            for (index in selectedAlbumsList.value) {
+//                delay(500.milliseconds)
+//                val album = rawAlbums.value[index]
+//                if (selectedSongAlbumList.value.contains(index)) { // If the Album is selected as Song Albums
+//                    if (!album.tracks.isNotEmpty()) {
+//                        for (trackId in album.tracks) {
+//                            for (rawSongIndex in rawSongs.value.indices) { // tracks are fetched from the id to rawSong
+//                                if (trackId == rawSongs.value[rawSongIndex].id) {
+//                                    val track =
+//                                        rawSongs.value.firstOrNull { it.id == trackId }
+//                                    if (track != null && track.attributes.albumName != null) {
+//                                        val result = LastFmManager.fetchTrackResults(
+//                                            track.attributes.albumName,
+//                                            track.attributes.artistName
+//                                        )
+//                                        if (result != null) {
+//                                            searchSongMap[rawSongIndex] = result
+//                                            selectedSearchSongMap[rawSongIndex] = 0
+//                                            _searchSongAlbums.update { searchSongMap }
+//                                            _selectedSongSearchTracks.update { selectedSearchSongMap }
+//                                        }
+//                                        delay(400.milliseconds)
+//                                        break
+//                                    }
+//                                }
+//                            }
+//                        }
+//                    }
+//
+//                } else {
+//
+//
+//                    val result =
+//                        LastFmManager.fetchAlbumResults(
+//                            album.albumAttributes.albumName,
+//                            artist = album.albumAttributes.artistName,
+//                            limit = 3
+//                        )
+//
+//                    if (result != null) {
+//                        selectedSearchMap[index] = 0
+//                        searchMap[index] = result
+//                        _selectedSearchAlbums.update { selectedSearchMap }
+//                        _searchAlbums.update { searchMap.toMap() }
+//
+//
+//                    }
+//
+//                }
+//
+//
+//            }
+//
+//
+//        }
 
     }
 

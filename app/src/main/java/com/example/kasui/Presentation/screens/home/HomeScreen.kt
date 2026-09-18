@@ -32,9 +32,9 @@ import com.example.kasui.viewmodels.HomeViewModel
 
 @Composable
 fun HomeScreen(
+    homeViewModel: HomeViewModel,
     scrollPastFirstItem: (Boolean) -> Unit
 ) {
-    val homeViewModel: HomeViewModel = viewModel()
 
     val lazyState: LazyStaggeredGridState = rememberLazyStaggeredGridState()
 
@@ -62,9 +62,9 @@ fun HomeScreen(
                 mutableStateOf(selectedAlbums.contains(index))
             }
             AlbumCard(
-                albumName = albumList[index].albumAttributes.albumName,
-                artistName = albumList[index].albumAttributes.artistName,
-                artwork = albumList[index].albumAttributes.artwork,
+                albumName = albumList[index].album.albumName,
+                artistName = albumList[index].album.artistName,
+                artwork = albumList[index].album.artwork,
                 selected = albumSelected,
                 onClick = {
                     homeViewModel.navToAlbumScreen(albumList[index])

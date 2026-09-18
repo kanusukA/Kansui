@@ -49,16 +49,16 @@ fun LastFmSyncCard(
                 .background(color = surfaceHighestColor)
         ) {
 
-            AsyncImage(
-                modifier = Modifier.size(70.dp),
-                model = rawAlbum.albumAttributes.artwork.bitmap ?: R.drawable.cover,
-                contentScale = ContentScale.FillHeight,
-                contentDescription = null
-            )
-            Column(verticalArrangement = Arrangement.SpaceEvenly) {
-                Text(rawAlbum.albumAttributes.albumName)
-                Text(rawAlbum.albumAttributes.artistName)
-            }
+//            AsyncImage(
+//                modifier = Modifier.size(70.dp),
+//                model = rawAlbum.albumAttributes.artwork.bitmap ?: R.drawable.cover,
+//                contentScale = ContentScale.FillHeight,
+//                contentDescription = null
+//            )
+//            Column(verticalArrangement = Arrangement.SpaceEvenly) {
+//                Text(rawAlbum.albumAttributes.albumName)
+//                Text(rawAlbum.albumAttributes.artistName)
+//            }
 
         }
         HorizontalDivider()

@@ -17,19 +17,26 @@ import com.example.kasui.Data.MusicBrainZ.musicBrainz
 import com.example.kasui.Data.local.AlbumDatabase
 import com.example.kasui.Data.local.AlbumRepository
 import com.example.kasui.Data.structure.Artwork
+import com.example.kasui.Data.structure.Genre
 import com.example.kasui.Data.structure.album.Album
 import com.example.kasui.Data.structure.album.AlbumAttributes
+import com.example.kasui.Data.structure.album.AlbumEntity
 import com.example.kasui.Data.structure.album.AlbumRelationships
 import com.example.kasui.Data.structure.album.AlbumViews
+import com.example.kasui.Data.structure.album.InsertAlbum
 import com.example.kasui.Data.structure.song.Song
 import com.example.kasui.Data.structure.song.SongAttributes
 import com.example.kasui.Data.structure.song.SongRelationships
+import com.example.kasui.Data.structure.song.Track
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlin.time.Duration
@@ -40,9 +47,17 @@ object MediaManager {
 
     private var albumRepository: AlbumRepository? = null
 
+    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+
+
     fun initRepo(context: Context) {
-        val albumDb = AlbumDatabase.getInstance(context)
-        albumRepository = AlbumRepository(albumDb.getAlbumDao())
+        coroutineScope.launch {
+            val albumDb = AlbumDatabase.getInstance(context)
+            albumRepository = AlbumRepository(albumDb.getAlbumDao())
+            
+//            fetchMusicFiles(context)
+        }
+
     }
 
 
@@ -51,6 +66,9 @@ object MediaManager {
 
     private var _rawAlbumList = MutableStateFlow(listOf<Album>())
     val rawAlbumList: StateFlow<List<Album>> = _rawAlbumList
+
+    private var _insertAlbums = MutableStateFlow(listOf<InsertAlbum>())
+
 
     // key is the index of _rawSongList
     private var _searchAlbumList = MutableStateFlow(mapOf<Int, List<Album>>())
@@ -61,6 +79,15 @@ object MediaManager {
         MediaManagerState.FREE
     )
     val mediaState: StateFlow<MediaManagerState> = _mediaState.asStateFlow()
+
+
+    fun saveAlbumData() {
+        if (albumRepository != null) {
+            _insertAlbums.value.forEach {
+                albumRepository?.addAlbum(it.albumEntity, it.genre, it.tracks)
+            }
+        }
+    }
 
 
     suspend fun fetchMusicFiles(context: Context) {
@@ -86,8 +113,7 @@ object MediaManager {
         )
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
 
-        val songList = mutableListOf<Song>()
-        val albumList = mutableListOf<Album>()
+        val insertAlbum = mutableListOf<InsertAlbum>()
 
         context.contentResolver.query(uri, projection, selection, null, null)?.use { cursor ->
 
@@ -123,6 +149,7 @@ object MediaManager {
 
             while (cursor.moveToNext()) {
                 val musicUri = ContentUris.withAppendedId(uri, cursor.getLong(_ID_Index))
+                val albumUri = ContentUris.withAppendedId(uri, cursor.getLong(ALBUM_ID_Index))
 
                 var bitmap: Bitmap? = null
 
@@ -187,18 +214,29 @@ object MediaManager {
                     relationships = songRelationship,
                 )
 
-                songList.add(song)
+                val track = Track(
+                    id = cursor.getLong(_ID_Index),
+                    uri = musicUri,
+                    albumName = cursor.getStringOrNull(ALBUM_Index),
+                    artistName = cursor.getStringOrNull(ARTIST_Index),
+                    name = cursor.getStringOrNull(TITLE_Index) ?: "Unknow Title",
+                    durationInMillis = cursor.getIntOrNull(DURATION_Index) ?: 0,
+                    hasLyrics = false
+                )
+
+//                songList.add(song)
 
                 var index: Int? = null
 
-                albumList.forEachIndexed { i, album ->
-                    if (album.album.id == cursor.getLong(ALBUM_ID_Index)) {
+                insertAlbum.forEachIndexed { i, album ->
+                    if (album.albumEntity.id == cursor.getLong(ALBUM_ID_Index)) {
                         index = i
                     }
                 }
 
                 if (index != null) {
-                    albumList[index].album
+                    // add song to album
+                    insertAlbum[index].tracks.add(track)
 
                 } else {
 
@@ -215,46 +253,42 @@ object MediaManager {
                         textColor4 = null
                     )
 
-                    val albumRelationships = AlbumRelationships(
-                        artists = mutableListOf(cursor.getLong(ARTIST_ID_Index)),
-                        genres = mutableListOf(cursor.getLong(GENRE_ID_Index)),
-                        tracks = mutableListOf(song.id),
-                        library = mutableListOf(),
-                        recordLabels = mutableListOf()
-                    )
-
-                    val albumAttributes = AlbumAttributes(
+                    val albumEntity = AlbumEntity(
+                        id = cursor.getLong(ALBUM_ID_Index),
+                        href = albumUri.toString(),
                         artistName = song.attributes.artistName ?: "Unknow Artist",
                         albumName = song.attributes.albumName ?: "Unknown Album",
                         artwork = artwork,
-                        genreNames = listOf(cursor.getStringOrNull(GENRE_Index) ?: ""),
                         isSingle = false,
+                        isComplete = false,
                         isCompilation = false,
-                        isComplete = true,
                         url = "",
-                        trackCount = 1,
-                        audioVariants = null,
-                        artistUrl = null,
-                        contentRating = null,
-                        editorialNotes = null,
-                        inFavorites = null,
-                        recordLabel = null,
-                        releaseDate = null
                     )
 
-                    val album = Album(
-                        album =
+                    val genres = mutableListOf(
+                        Genre(
+                            name = cursor.getStringOrNull(GENRE_Index) ?: "",
+                            id = cursor.getLong(GENRE_ID_Index)
+                        )
                     )
 
-                    albumList.add(album)
+
+                    val tracks = mutableListOf(track)
+
+
+
+                    insertAlbum.add(
+                        InsertAlbum(albumEntity, tracks, genres)
+                    )
 
                 }
 
             }
         }
 
-        _rawSongList.update { songList }
-        _rawAlbumList.update { albumList }
+//        _rawSongList.update { songList }
+//        _rawAlbumList.update { albumList }
+        saveAlbumData()
         _mediaState.update { MediaManagerState.FREE }
 
     }
@@ -278,81 +312,83 @@ object MediaManager {
         }
     }
 
+    @Deprecated(message = "USE TRACK INSTEAD")
     fun fetchSongsFromAlbum(album: Album): List<Song> {
         val songs = mutableListOf<Song>()
-        album.albumRelationships?.tracks?.forEach { id ->
-            _rawSongList.value.forEach { song ->
-                if (song.id == id) {
-                    songs.add(song)
-                    return@forEach
-                }
-            }
-        }
+//        album.albumRelationships?.tracks?.forEach { id ->
+//            _rawSongList.value.forEach { song ->
+//                if (song.id == id) {
+//                    songs.add(song)
+//                    return@forEach
+//                }
+//            }
+//        }
         return songs
     }
+
 
     val artworkFetcher = CoroutineScope(Dispatchers.IO)
 
 
     // MUSIC BRAINZ
-
+    @Deprecated(message = "MUSICBRAINZ is not used!")
     suspend fun syncAlbumLibraryWithMusicBrainZ() {
-        _mediaState.update { MediaManagerState.LOADING_RAW }
-        val syncList: MutableMap<Int, List<Album>> = mutableMapOf()
+//        _mediaState.update { MediaManagerState.LOADING_RAW }
+//        val syncList: MutableMap<Int, List<Album>> = mutableMapOf()
+//
+//        _rawAlbumList.value.forEachIndexed { index, album ->
+//
+//            delay(1200.milliseconds)
+//
+//            val searchReleases = musicBrainz.searchReleases(album.albumAttributes.albumName, null)
+//
+//            if (searchReleases?.releases != null && searchReleases.releases.isNotEmpty()) {
+//                var count = 2
+//                if (searchReleases.releases.size < 2) count = searchReleases.releases.size
+//                val resultList = mutableListOf<Album>()
+//                for (releaseIndex in 0..<count) {
+//                    val release = searchReleases.releases[releaseIndex]
+//
+//                    val coverArt = musicBrainz.getReleaseCover(release.id)
+//
+//                    val artwork = Artwork(
+//                        height = 0,
+//                        width = 0,
+//                        url = if (!coverArt?.images.isNullOrEmpty()) coverArt.images[0].image else null
+//                    )
+//
+//                    val attributes = AlbumAttributes(
+//                        artistName = if (release.artistCredit.isNotEmpty()) release.artistCredit[0].name else "Unknown",
+//                        albumName = release.title ?: " Unknown Album",
+//                        artwork = artwork,
+//                        genreNames = emptyList(),
+//                        isSingle = release.trackCount == 1,
+//                        isCompilation = false,
+//                        isComplete = false,
+//                        url = "",
+//                        trackCount = release.trackCount
+//                    )
+//
+//                    resultList.add(
+//                        Album(
+//                            id = album.id,
+//                            href = release.id,
+//                            albumAttributes = attributes,
+//                            albumRelationships = null,
+//                            albumViews = null
+//                        )
+//                    )
+//
+//
+//                }
+//
+//                syncList[index] = resultList
+//            }
 
-        _rawAlbumList.value.forEachIndexed { index, album ->
-
-            delay(1200.milliseconds)
-
-            val searchReleases = musicBrainz.searchReleases(album.albumAttributes.albumName, null)
-
-            if (searchReleases?.releases != null && searchReleases.releases.isNotEmpty()) {
-                var count = 2
-                if (searchReleases.releases.size < 2) count = searchReleases.releases.size
-                val resultList = mutableListOf<Album>()
-                for (releaseIndex in 0..<count) {
-                    val release = searchReleases.releases[releaseIndex]
-
-                    val coverArt = musicBrainz.getReleaseCover(release.id)
-
-                    val artwork = Artwork(
-                        height = 0,
-                        width = 0,
-                        url = if (!coverArt?.images.isNullOrEmpty()) coverArt.images[0].image else null
-                    )
-
-                    val attributes = AlbumAttributes(
-                        artistName = if (release.artistCredit.isNotEmpty()) release.artistCredit[0].name else "Unknown",
-                        albumName = release.title ?: " Unknown Album",
-                        artwork = artwork,
-                        genreNames = emptyList(),
-                        isSingle = release.trackCount == 1,
-                        isCompilation = false,
-                        isComplete = false,
-                        url = "",
-                        trackCount = release.trackCount
-                    )
-
-                    resultList.add(
-                        Album(
-                            id = album.id,
-                            href = release.id,
-                            albumAttributes = attributes,
-                            albumRelationships = null,
-                            albumViews = null
-                        )
-                    )
-
-
-                }
-
-                syncList[index] = resultList
-            }
-
-        }
-
-        _searchAlbumList.update { syncList.toMap() }
-        _mediaState.update { MediaManagerState.FREE }
+//        }
+//
+//        _searchAlbumList.update { syncList.toMap() }
+//        _mediaState.update { MediaManagerState.FREE }
 
     }
 

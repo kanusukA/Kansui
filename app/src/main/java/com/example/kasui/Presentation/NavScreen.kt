@@ -45,6 +45,7 @@ import com.example.kasui.Presentation.screens.home.HomeScreen
 import com.example.kasui.Presentation.screens.home.WelcomeScreen
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.surfaceColor
+import com.example.kasui.viewmodels.MainViewModel
 import com.example.kasui.viewmodels.TopBarViewModel
 import com.example.kasui.viewmodels.WelcomeViewmodel
 import kotlinx.coroutines.delay
@@ -52,7 +53,9 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 15)
 @Composable
-fun NavScreen() {
+fun NavScreen(
+    mainViewModel: MainViewModel
+) {
 
     val navController = rememberNavController()
 
@@ -151,6 +154,7 @@ fun NavScreen() {
                         }
                     }
                     HomeScreen(
+                        mainViewModel.homeViewModel,
                         scrollPastFirstItem = {
                             isScrolledPastFirstItem = it
                         }
@@ -179,6 +183,7 @@ fun NavScreen() {
                         }
                     }
                     HomeScreen(
+                        mainViewModel.homeViewModel,
                         scrollPastFirstItem = {
                             isScrolledPastFirstItem = it
                         }
@@ -193,6 +198,7 @@ fun NavScreen() {
                         }
                     }
                     HomeScreen(
+                        mainViewModel.homeViewModel,
                         scrollPastFirstItem = {
                             isScrolledPastFirstItem = it
                         }

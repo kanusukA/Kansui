@@ -6,8 +6,8 @@ import androidx.room.PrimaryKey
 
 @Entity(tableName = "genres")
 data class Genre(
-    @PrimaryKey(autoGenerate = true) val id: Long,
+    @PrimaryKey(autoGenerate = false) val id: Long,
     val name: String,
-    val parentId: Int?,
-    val parentName: String?
+    val parentId: Int? = null,
+    val parentName: String? = null
 )

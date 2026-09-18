@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
 //
 //            }
             //WelcomeScreen()
-            NavScreen()
+            NavScreen(mainViewModel)
         }
 
 

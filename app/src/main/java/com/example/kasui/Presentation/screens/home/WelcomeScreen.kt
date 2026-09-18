@@ -265,9 +265,9 @@ fun WelcomeScreen(
                         }
 
                         AlbumCard(
-                            albumName = album.albumAttributes.albumName,
-                            artistName = album.albumAttributes.artistName,
-                            artwork = album.albumAttributes.artwork,
+                            albumName = album.album.albumName,
+                            artistName = album.album.artistName,
+                            artwork = album.album.artwork,
                             onClick = {
                                 if (!selected) {
                                     welcomeViewmodel.setSelectedAlbumList(

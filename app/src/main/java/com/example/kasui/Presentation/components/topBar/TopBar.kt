@@ -4,6 +4,7 @@ package com.example.kasui.Presentation.components.topBar
 import androidx.compose.animation.Animatable
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
@@ -74,6 +75,8 @@ fun TopBar(
     val albumScreenState by NavManager.albumScreenState.collectAsStateWithLifecycle()
     val visibility by NavManager.topBarVisibility.collectAsStateWithLifecycle()
 
+    val playingTrack by NavManager.playingTrack.collectAsStateWithLifecycle()
+
     val animatedVisibility = remember { Animatable(TitleColor) }
     var TopPadding by remember {
         mutableStateOf(0.dp)
@@ -84,6 +87,10 @@ fun TopBar(
     var fontSizeScale by remember { mutableFloatStateOf(85f) }
     val animatedFontSizeScale =
         animateFloatAsState(fontSizeScale)
+
+    var subFontSizeScale by remember { mutableFloatStateOf(45f) }
+    val animatedSubFontSizeScale =
+        animateFloatAsState(subFontSizeScale)
 
     val topBarSelectionState by topBarViewModel.topBarSelectionState.collectAsStateWithLifecycle()
 
@@ -97,12 +104,16 @@ fun TopBar(
         mutableStateOf("")
     }
 
-
-    val subText by remember(selectedAlbum) {
-        mutableStateOf(
-            selectedAlbum?.album?.artistName ?: ""
-        )
+    var subSubHeading by remember {
+        mutableStateOf("")
     }
+
+//
+//    val subText by remember(selectedAlbum) {
+//        mutableStateOf(
+//            selectedAlbum?.album?.artistName ?: ""
+//        )
+//    }
 
     val selectionMode by remember(topBarSelectionState) {
         mutableStateOf(topBarSelectionState != TopBarSelectionState.NONE)
@@ -136,27 +147,36 @@ fun TopBar(
         when (navState) {
             is NavRoutes.Album -> {
                 headingText = selectedAlbum?.album?.albumName ?: ""
+                subHeading = selectedAlbum?.album?.albumName ?: ""
                 TopPadding = 180.dp
                 NavManager.setTopBarVisibility(true)
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+                fontSizeScale = 85f
+                subFontSizeScale = 45f
             }
 
             is NavRoutes.Home -> {
                 headingText = "Kansui"
                 TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+                fontSizeScale = 85f
+                subFontSizeScale = 45f
             }
 
             is NavRoutes.Library -> {
                 headingText = "Kansui"
                 TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+                fontSizeScale = 85f
+                subFontSizeScale = 45f
             }
 
             is NavRoutes.Search -> {
                 headingText = "Search"
                 TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+                fontSizeScale = 85f
+                subFontSizeScale = 45f
             }
 
             is NavRoutes.WelcomeLogin -> {
@@ -177,13 +197,25 @@ fun TopBar(
                 headingText = "Welcome"
                 subHeading = if (username.isNotEmpty()) username else "Kansui"
                 TopPadding = 0.dp
+
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+            }
+
+            is NavRoutes.Player -> {
+                headingText = playingTrack?.name ?: ""
+                subHeading = playingTrack?.albumName ?: ""
+                TopPadding = 460.dp
+                fontSizeScale = 64f
+                subFontSizeScale = 32f
+                subSubHeading = playingTrack?.artistName ?: ""
+                NavManager.setTopBarVisibility(true)
             }
         }
     }
 
     val animatedSubTextColor = remember { Animatable(TitleColor) }
-    val animatedSubTextPos = remember { androidx.compose.animation.core.Animatable(130f) }
+    val animatedSubTextPos = remember { Animatable(130f) }
+    val animatedSubSubHeading = remember { Animatable(180f) }
 
 
 
@@ -255,66 +287,85 @@ fun TopBar(
         }
 
         // WELCOME SUBTEXT
-        AnimatedVisibility(
-            modifier = Modifier.offset(y = -38.dp),
-            visible = navState.navRoute == NavRoutes.WelcomeLogin().route
-        ) {
-            Column() {
-                Text(
-
-                    text = subHeading,
-                    fontFamily = ViaodaLibre,
-                    letterSpacing = (-4).sp,
-                    style = TextStyle(
-                        textMotion = TextMotion.Animated,
-                        fontSize = 38.sp,
-                        color = animatedVisibility.value,
-                        lineHeight = 48.sp
-
-                    )
-                )
-
-                Spacer(modifier = Modifier.height(animatedSubTextPos.value.dp))
-
-                AnimatedVisibility(
-                    visible = navState == NavRoutes.WelcomeSetupAlbum() || navState == NavRoutes.WelcomeSearchAlbum()
-                ) {
-                    Column {
-                        Text(
-                            modifier = Modifier.offset(y = -90.dp),
-                            text = if (navState == NavRoutes.WelcomeSetupAlbum()) "Let's set you up" else "Choose album",
-                            fontFamily = UncutSans,
-                            fontWeight = FontWeight.Medium,
-                            fontSize = 20.sp,
-                            color = animatedSubTextColor.value
-                        )
-                        Text(
-                            modifier = Modifier.offset(y = -90.dp),
-                            text = if (navState == NavRoutes.WelcomeSetupAlbum()) "From below select the albums you want to update"
-                            else "Select the album most accurate to the one searched for.",
-                            fontFamily = UncutSans,
-                            fontSize = 18.sp,
-                            color = animatedSubTextColor.value
-                        )
-                    }
-                }
-
-            }
-        }
+//        AnimatedVisibility(
+//            modifier = Modifier.offset(y = -38.dp),
+//            visible = navState.navRoute == NavRoutes.WelcomeLogin().route
+//        ) {
+//            Column() {
+//                Text(
+//
+//                    text = subHeading,
+//                    fontFamily = ViaodaLibre,
+//                    letterSpacing = (-4).sp,
+//                    style = TextStyle(
+//                        textMotion = TextMotion.Animated,
+//                        fontSize = 38.sp,
+//                        color = animatedVisibility.value,
+//                        lineHeight = 48.sp
+//
+//                    )
+//                )
+//
+//                Spacer(modifier = Modifier.height(animatedSubTextPos.value.dp))
+//
+//                AnimatedVisibility(
+//                    visible = navState == NavRoutes.WelcomeSetupAlbum() || navState == NavRoutes.WelcomeSearchAlbum()
+//                ) {
+//                    Column {
+//                        Text(
+//                            modifier = Modifier.offset(y = -90.dp),
+//                            text = if (navState == NavRoutes.WelcomeSetupAlbum()) "Let's set you up" else "Choose album",
+//                            fontFamily = UncutSans,
+//                            fontWeight = FontWeight.Medium,
+//                            fontSize = 20.sp,
+//                            color = animatedSubTextColor.value
+//                        )
+//                        Text(
+//                            modifier = Modifier.offset(y = -90.dp),
+//                            text = if (navState == NavRoutes.WelcomeSetupAlbum()) "From below select the albums you want to update"
+//                            else "Select the album most accurate to the one searched for.",
+//                            fontFamily = UncutSans,
+//                            fontSize = 18.sp,
+//                            color = animatedSubTextColor.value
+//                        )
+//                    }
+//                }
+//
+//            }
+//        }
 
         // ALBUM SUBTEXT
         AnimatedVisibility(
-            modifier = Modifier.offset(y = -38.dp),
-            visible = navState.navRoute == NavRoutes.Album().route
+            modifier = Modifier.offset(y = -32.dp),
+            visible = navState.navRoute == NavRoutes.Album().route || navState.navRoute == NavRoutes.Player().route
         ) {
             Text(
 
-                text = subText,
+                text = subHeading,
                 fontFamily = ViaodaLibre,
                 letterSpacing = (-4).sp,
                 style = TextStyle(
                     textMotion = TextMotion.Animated,
-                    fontSize = 45.sp,
+                    fontSize = animatedSubFontSizeScale.value.sp,
+                    color = animatedVisibility.value,
+                    lineHeight = 48.sp
+
+                )
+            )
+        }
+
+        AnimatedVisibility(
+            modifier = Modifier.offset(y = -48.dp),
+            visible = navState.navRoute == NavRoutes.Player().route
+        ) {
+            Text(
+
+                text = subSubHeading,
+                fontFamily = ViaodaLibre,
+                letterSpacing = (-4).sp,
+                style = TextStyle(
+                    textMotion = TextMotion.Animated,
+                    fontSize = 32.sp,
                     color = animatedVisibility.value,
                     lineHeight = 48.sp
 

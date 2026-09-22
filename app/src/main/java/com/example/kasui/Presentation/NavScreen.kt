@@ -6,6 +6,7 @@ import androidx.annotation.RequiresExtension
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -42,6 +43,7 @@ import com.example.kasui.Presentation.components.bottomBar.BottomBar
 import com.example.kasui.Presentation.components.topBar.TopBar
 import com.example.kasui.Presentation.screens.home.AlbumScreen
 import com.example.kasui.Presentation.screens.home.HomeScreen
+import com.example.kasui.Presentation.screens.home.PlayerFullView
 import com.example.kasui.Presentation.screens.home.PlayerView
 import com.example.kasui.Presentation.screens.home.WelcomeScreen
 import com.example.kasui.ui.TitleColor
@@ -93,6 +95,7 @@ fun NavScreen(
                 is WelcomeSearchAlbum -> navController.navigate(WelcomeSearchAlbum().route)
                 is WelcomeLogin -> navController.navigate(WelcomeLogin().route)
                 is WelcomeSetupAlbum -> navController.navigate(WelcomeSetupAlbum().route)
+                is Player -> navController.navigate(Player().route)
             }
         }
 
@@ -203,6 +206,16 @@ fun NavScreen(
                         }
                     )
                 }
+
+                composable(route = Player().route) {
+                    BackHandler(enabled = true) {
+                        println("POP back")
+                        when (navState) {
+                            else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
+                        }
+                    }
+                    PlayerFullView(modifier = Modifier)
+                }
 //
 //                composable(route = NavRoutes.Home().route) {
 //                    HomeScreen(
@@ -228,7 +241,15 @@ fun NavScreen(
                     .padding(horizontal = 24.dp, vertical = 16.dp)
             )
 
-            PlayerView(modifier = Modifier.align(Alignment.BottomCenter))
+            //PlayerFullView(modifier = Modifier)
+            //PlayerView(modifier = Modifier.align(Alignment.BottomCenter))
+            if (navState.navRoute != Player().route) {
+                PlayerView(
+                    modifier = Modifier
+                        .align(Alignment.BottomCenter)
+
+                )
+            }
 
 
         }

@@ -119,6 +119,17 @@ fun BottomBar(
         mutableStateOf(42.dp)
     }
 
+    val miniPlayerVisible by NavManager.miniPlayerVisible.collectAsStateWithLifecycle(false)
+    val _boxRounding by remember(miniPlayerVisible) {
+        mutableStateOf(
+            if (miniPlayerVisible) {
+                12.dp
+            } else {
+                36.dp
+            }
+        )
+    }
+    val animatedBoxRounding = animateDpAsState(_boxRounding)
 
     val showBackTab by remember(navState) {
         mutableStateOf(
@@ -250,9 +261,9 @@ fun BottomBar(
 //            .clip(shape = CircleShape)
             .background(
                 surfaceHighColor.copy(alpha = 0.85f), shape = RoundedCornerShape(
-                    topStart = 12.dp,
+                    topStart = animatedBoxRounding.value,
                     bottomStart = 36.dp,
-                    topEnd = 12.dp,
+                    topEnd = animatedBoxRounding.value,
                     bottomEnd = 36.dp
                 )
             )

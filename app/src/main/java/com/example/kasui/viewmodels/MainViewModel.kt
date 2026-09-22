@@ -71,17 +71,15 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun initMain(context: Context) {
-
         MediaManager.initRepo(context)
 
-        viewModelScope.launch(Dispatchers.IO) {
-            LastFmManager.loadSessionKey(application.applicationContext)
-        }
-
-
 //        viewModelScope.launch(Dispatchers.IO) {
-//            // MediaManager.fetchMusicFiles(application.applicationContext)
+//            LastFmManager.loadSessionKey(application.applicationContext)
 //        }
+
+        viewModelScope.launch(Dispatchers.IO) {
+            MediaManager.fetchMusicFiles(application.applicationContext)
+        }
     }
 
     // CREATE AND MANAGE VIEWMODEL BY YOURSELF!!!!!

@@ -54,7 +54,6 @@ object MediaManager {
         coroutineScope.launch {
             val albumDb = AlbumDatabase.getInstance(context)
             albumRepository = AlbumRepository(albumDb.getAlbumDao())
-            
 //            fetchMusicFiles(context)
         }
 
@@ -144,8 +143,6 @@ object MediaManager {
                 println("No Music file found")
                 return
             }
-
-
 
             while (cursor.moveToNext()) {
                 val musicUri = ContentUris.withAppendedId(uri, cursor.getLong(_ID_Index))
@@ -285,7 +282,7 @@ object MediaManager {
 
             }
         }
-
+        _insertAlbums.update { insertAlbum }
 //        _rawSongList.update { songList }
 //        _rawAlbumList.update { albumList }
         saveAlbumData()

@@ -20,7 +20,7 @@ android {
     }
     namespace = "com.example.kasui"
     compileSdk {
-        version = release(36) {
+        version = release(37) {
             minorApiLevel = 1
         }
     }
@@ -106,7 +106,8 @@ dependencies {
     ksp(libs.androidx.room.compiler)
     implementation(libs.androidx.room.ktx)
 
-    //Data Store
+    // EXOPLAYER
+    implementation(libs.androidx.media3.exoplayer)
 
 
     /// REMOVE IN PROD

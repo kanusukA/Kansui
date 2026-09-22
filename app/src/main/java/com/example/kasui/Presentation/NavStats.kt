@@ -1,10 +1,14 @@
 package com.example.kasui.Presentation
 
+import android.net.Uri
 import com.example.kasui.Data.structure.album.Album
+import com.example.kasui.Data.structure.song.Track
 import com.example.kasui.Presentation.screens.home.AlbumScreenState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 enum class NavState {
@@ -30,6 +34,9 @@ sealed class NavRoutes(
         NavRoutes(popBackStack, navRoute = route)
 
     data class Album(val route: String = "Album", val popBackStack: Boolean = false) :
+        NavRoutes(popBackStack, navRoute = route)
+
+    data class Player(val route: String = "Player", val popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
 
     data class WelcomeLogin(
@@ -82,6 +89,24 @@ object NavManager {
         changeNavState(NavRoutes.Album())
     }
 
+    private var _miniPlayerVisible = _navStates.map {
+        it.navRoute != NavRoutes.Player().route
+    }
+    val miniPlayerVisible = _miniPlayerVisible
+
+    private var _playingTrack: MutableStateFlow<Track?> = MutableStateFlow(
+        Track(
+            id = 0L,
+            albumName = "Long Nights and Wasted Affairs",
+            artistName = "Mind's Eye",
+            durationInMillis = 3000,
+            name = "astrology Girl",
+            hasLyrics = false,
+            uri = Uri.EMPTY
+        )
+    )
+    val playingTrack = _playingTrack.asStateFlow()
+
     // INTER_VIEWMODEL_VARIABLES
     private var _albumScreenState: MutableStateFlow<AlbumScreenState> =
         MutableStateFlow(AlbumScreenState.DEFAULT)
@@ -96,6 +121,10 @@ object NavManager {
 
     fun setTopBarVisibility(visibility: Boolean) {
         _topBarVisibility.update { visibility }
+    }
+
+    fun playTrack(track: Track) {
+        _playingTrack.update { track }
     }
 
 }

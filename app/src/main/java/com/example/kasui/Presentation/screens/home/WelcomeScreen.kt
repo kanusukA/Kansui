@@ -2,26 +2,16 @@ package com.example.kasui.Presentation.screens.home
 
 import android.os.Build
 import androidx.annotation.RequiresExtension
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.animateDpAsState
-import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material3.Text
@@ -29,21 +19,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ModifierInfo
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.kasui.Data.LastFm.LASTFM_STATE
 import com.example.kasui.Data.request.MediaManagerState
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
@@ -52,15 +37,10 @@ import com.example.kasui.Presentation.components.albumCard.AlbumCard
 import com.example.kasui.Presentation.components.albumCard.LastFmSyncCard
 import com.example.kasui.Presentation.components.songCard.LastFmTrackSyncCard
 import com.example.kasui.ui.TitleColor
-import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.UncutSans
-import com.example.kasui.ui.ViaodaLibre
-import com.example.kasui.ui.customs.KButton
 import com.example.kasui.ui.customs.SentientTextBox.SentientTextBox
-import com.example.kasui.ui.interlope
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.surfaceHighColor
-import com.example.kasui.ui.variantColor
 import com.example.kasui.viewmodels.MainViewModel
 import com.example.kasui.viewmodels.TopBarSelectionState
 import com.example.kasui.viewmodels.TopBarViewModel
@@ -79,7 +59,7 @@ fun WelcomeScreen(
     val password by welcomeViewmodel.password.collectAsStateWithLifecycle()
 
     val mediaManagerState by mainViewModel.mediaManagerState.collectAsStateWithLifecycle()
-    val rawAlbumList by mainViewModel.rawAlbums.collectAsStateWithLifecycle()
+    val rawAlbumList by mainViewModel.dbAlbums.collectAsStateWithLifecycle()
     val rawSongList by mainViewModel.rawSongs.collectAsStateWithLifecycle()
     val selectedAlbumList by welcomeViewmodel.selectedAlbumsList.collectAsStateWithLifecycle()
     val selectedSongAlbumList by welcomeViewmodel.selectedSongAlbumList.collectAsStateWithLifecycle()

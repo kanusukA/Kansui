@@ -2,10 +2,7 @@ package com.example.kasui.viewmodels
 
 import android.app.Application
 import android.content.Context
-import android.os.Build
-import androidx.annotation.RequiresExtension
 import androidx.lifecycle.AndroidViewModel
-import androidx.lifecycle.ViewModel
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
 import com.example.kasui.Data.LastFm.LASTFM_STATE
@@ -14,6 +11,7 @@ import com.example.kasui.Data.local.AlbumDatabase
 import com.example.kasui.Data.local.AlbumRepository
 import com.example.kasui.Data.request.MediaManager
 import com.example.kasui.Data.structure.album.Album
+import com.example.kasui.Data.structure.song.Track
 //import com.example.kasui.Data.structure.MusicBrainz.Media
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
@@ -23,7 +21,6 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
 class MainViewModel(application: Application) : AndroidViewModel(application) {
@@ -32,6 +29,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // VIEW MODELS
     var homeViewModel: HomeViewModel
+//    var playerViewModel: PlayerViewModel
+//    var topBarViewModel: TopBarViewModel
 
 
     val username: StateFlow<String> = LastFmManager.username.stateIn(
@@ -40,7 +39,9 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         initialValue = ""
     )
     val mediaManagerState = MediaManager.mediaState
-    var rawAlbums: StateFlow<List<Album>>
+    var dbAlbums: StateFlow<List<Album>>
+    var dbTracks: StateFlow<List<Track>>
+
     val rawSongs = MediaManager.rawSongList
 
     val loginCoroutine = CoroutineScope(Dispatchers.IO)
@@ -49,7 +50,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val albumDao = AlbumDatabase.getInstance(application.applicationContext).getAlbumDao()
         val albumRepo = AlbumRepository(albumDao)
 
-        rawAlbums = albumRepo.albums.map {
+        dbAlbums = albumRepo.albums.map {
             it.map { album ->
                 if (album.album.artwork.bitmap == null && album.album.artwork.uri != null) {
                     album.album.artwork.bitmap = MediaManager.fetchArtworkFromTrackUri(
@@ -65,12 +66,18 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             initialValue = emptyList()
         )
 
+        dbTracks = albumRepo.getAllTracks()
+            .stateIn(viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList())
+
         homeViewModel = HomeViewModel(albumRepo, this)
+//        playerViewModel = PlayerViewModel(this)
+//        topBarViewModel = TopBarViewModel(playerViewModel)
 
 
     }
 
     fun initMain(context: Context) {
+        Player.initPlayer(context)
         MediaManager.initRepo(context)
 
 //        viewModelScope.launch(Dispatchers.IO) {

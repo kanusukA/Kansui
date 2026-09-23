@@ -123,7 +123,7 @@ interface AlbumDao {
         (AlbumGenreCrossRef::class),
         (Track::class),
         (AlbumTrackCrossRef::class)],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 @TypeConverters(UriConverter::class, ColorConverter::class)
@@ -160,7 +160,7 @@ class AlbumRepository(private val albumDao: AlbumDao) {
 
     val albums: Flow<List<Album>> = getAllAlbums()
 
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
+    private val coroutineScope = CoroutineScope(Dispatchers.IO)
 
     fun addAlbum(nAlbum: AlbumEntity, genres: List<Genre>, tracks: List<Track>) {
         coroutineScope.launch(Dispatchers.IO) {
@@ -176,6 +176,10 @@ class AlbumRepository(private val albumDao: AlbumDao) {
 
     fun getAllAlbums(): Flow<List<Album>> {
         return albumDao.getAllAlbums()
+    }
+
+    fun getAllTracks(): Flow<List<Track>> {
+        return albumDao.getAllTracks()
     }
 
 }

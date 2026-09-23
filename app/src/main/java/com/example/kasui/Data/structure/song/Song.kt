@@ -30,7 +30,8 @@ data class Track(
     val durationInMillis: Int,
 //    val genreNames: List<Genre>,
     val hasLyrics: Boolean,
-    val uri: Uri
+    val uri: Uri,
+    val albumId: Long,
 )
 
 class Song(

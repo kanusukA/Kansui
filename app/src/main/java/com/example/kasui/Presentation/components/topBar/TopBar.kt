@@ -8,52 +8,34 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontStyle
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.kasui.Data.request.MediaManagerState
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
-import com.example.kasui.Presentation.NavState
-import com.example.kasui.Presentation.WelcomeSubRoutes
+import com.example.kasui.Presentation.PlayerFullViewState
 import com.example.kasui.Presentation.screens.home.AlbumScreenState
 import com.example.kasui.ui.TitleColor
-import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
-import com.example.kasui.ui.surfaceColor
-import com.example.kasui.ui.surfaceHighColor
 import com.example.kasui.ui.textOnSurface
+import com.example.kasui.viewmodels.Player
 import com.example.kasui.viewmodels.TopBarSelectionState
 import com.example.kasui.viewmodels.TopBarViewModel
 import com.example.kasui.viewmodels.TopSelectionBars
@@ -75,7 +57,9 @@ fun TopBar(
     val albumScreenState by NavManager.albumScreenState.collectAsStateWithLifecycle()
     val visibility by NavManager.topBarVisibility.collectAsStateWithLifecycle()
 
-    val playingTrack by NavManager.playingTrack.collectAsStateWithLifecycle()
+    val playingTrack by topBarViewModel.playerViewModel.currentTrack.collectAsStateWithLifecycle()
+
+    val playerFullViewState by NavManager.playerViewState.collectAsStateWithLifecycle()
 
     val animatedVisibility = remember { Animatable(TitleColor) }
     var TopPadding by remember {
@@ -143,11 +127,11 @@ fun TopBar(
     }
 
 
-    LaunchedEffect(navState, mediaState) {
+    LaunchedEffect(navState, mediaState, playerFullViewState) {
         when (navState) {
             is NavRoutes.Album -> {
                 headingText = selectedAlbum?.album?.albumName ?: ""
-                subHeading = selectedAlbum?.album?.albumName ?: ""
+                subHeading = selectedAlbum?.album?.artistName ?: ""
                 TopPadding = 180.dp
                 NavManager.setTopBarVisibility(true)
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
@@ -201,14 +185,29 @@ fun TopBar(
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
             }
 
-            is NavRoutes.Player -> {
-                headingText = playingTrack?.name ?: ""
-                subHeading = playingTrack?.albumName ?: ""
-                TopPadding = 460.dp
-                fontSizeScale = 64f
-                subFontSizeScale = 32f
-                subSubHeading = playingTrack?.artistName ?: ""
-                NavManager.setTopBarVisibility(true)
+            is NavRoutes.PlayerView -> {
+                when (playerFullViewState) {
+
+                    PlayerFullViewState.QUEUE -> {
+                        headingText = "Queue"
+                        subHeading = ""
+                        TopPadding = 0.dp
+                        fontSizeScale = 72f
+                        subFontSizeScale = 32f
+                        subSubHeading = ""
+                        NavManager.setTopBarVisibility(true)
+                    }
+
+                    else -> {
+                        headingText = playingTrack?.name ?: ""
+                        subHeading = playingTrack?.albumName ?: ""
+                        TopPadding = 420.dp
+                        fontSizeScale = 64f
+                        subFontSizeScale = 32f
+                        subSubHeading = playingTrack?.artistName ?: ""
+                        NavManager.setTopBarVisibility(true)
+                    }
+                }
             }
         }
     }
@@ -337,7 +336,7 @@ fun TopBar(
         // ALBUM SUBTEXT
         AnimatedVisibility(
             modifier = Modifier.offset(y = -32.dp),
-            visible = navState.navRoute == NavRoutes.Album().route || navState.navRoute == NavRoutes.Player().route
+            visible = navState.navRoute == NavRoutes.Album().route || navState.navRoute == NavRoutes.PlayerView().route
         ) {
             Text(
 
@@ -356,7 +355,7 @@ fun TopBar(
 
         AnimatedVisibility(
             modifier = Modifier.offset(y = -48.dp),
-            visible = navState.navRoute == NavRoutes.Player().route
+            visible = navState.navRoute == NavRoutes.PlayerView().route
         ) {
             Text(
 

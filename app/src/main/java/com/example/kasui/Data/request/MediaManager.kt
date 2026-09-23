@@ -90,6 +90,13 @@ object MediaManager {
 
 
     suspend fun fetchMusicFiles(context: Context) {
+        val tracksLoaded = mutableListOf<Long>()
+        val dbSongs = albumRepository?.getAllTracks()?.collect { it ->
+            it.forEach { track ->
+                tracksLoaded.add(track.id)
+            }
+        }
+
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         _mediaState.update { MediaManagerState.LOADING_RAW }
         val projection = arrayOf(
@@ -157,59 +164,63 @@ object MediaManager {
 //                }
 
 
-                val songAttribute = SongAttributes(
-                    name = cursor.getStringOrNull(TITLE_Index) ?: "Unknow Title",
-                    durationInMillis = cursor.getIntOrNull(DURATION_Index) ?: 0,
-                    genreNames = if (cursor.getStringOrNull(GENRE_Index) != null) listOf(
-                        cursor.getString(
-                            GENRE_Index
-                        )
-                    ) else emptyList(),
-                    hasLyrics = false,
-                    uri = musicUri,
-                    albumName = cursor.getStringOrNull(ALBUM_Index),
-                    artistName = cursor.getStringOrNull(ARTIST_Index),
-                    artistUrl = null,
-                    artwork = Artwork(
-                        height = 0,
-                        width = 0,
-                        url = null,
-                        uri = null,
-                        bitmap = null,
-                        bgColor = null,
-                        textColor1 = null,
-                        textColor2 = null,
-                        textColor3 = null,
-                        textColor4 = null
-                    ),
-                    attribution = null,
-                    audioVariants = null,
-                    composerName = null,
-                    contentRating = null,
-                    discNumber = cursor.getIntOrNull(DISC_NUMBER_Index),
-                    editorialNotes = null,
-                    inFavorites = null,
-                    releaseDate = cursor.getStringOrNull(DATE_ADDED_Index),
-                    trackNumber = cursor.getIntOrNull(TRACK_Index),
-                    url = null
-                )
+//                val songAttribute = SongAttributes(
+//                    name = cursor.getStringOrNull(TITLE_Index) ?: "Unknow Title",
+//                    durationInMillis = cursor.getIntOrNull(DURATION_Index) ?: 0,
+//                    genreNames = if (cursor.getStringOrNull(GENRE_Index) != null) listOf(
+//                        cursor.getString(
+//                            GENRE_Index
+//                        )
+//                    ) else emptyList(),
+//                    hasLyrics = false,
+//                    uri = musicUri,
+//                    albumName = cursor.getStringOrNull(ALBUM_Index),
+//                    artistName = cursor.getStringOrNull(ARTIST_Index),
+//                    artistUrl = null,
+//                    artwork = Artwork(
+//                        height = 0,
+//                        width = 0,
+//                        url = null,
+//                        uri = null,
+//                        bitmap = null,
+//                        bgColor = null,
+//                        textColor1 = null,
+//                        textColor2 = null,
+//                        textColor3 = null,
+//                        textColor4 = null
+//                    ),
+//                    attribution = null,
+//                    audioVariants = null,
+//                    composerName = null,
+//                    contentRating = null,
+//                    discNumber = cursor.getIntOrNull(DISC_NUMBER_Index),
+//                    editorialNotes = null,
+//                    inFavorites = null,
+//                    releaseDate = cursor.getStringOrNull(DATE_ADDED_Index),
+//                    trackNumber = cursor.getIntOrNull(TRACK_Index),
+//                    url = null
+//                )
+//
+//
+//                val songRelationship = SongRelationships(
+//                    albums = listOf(cursor.getLong(ALBUM_ID_Index)),
+//                    artists = listOf(cursor.getLong(ARTIST_ID_Index)),
+//                    composers = emptyList(),
+//                    genres = emptyList(),
+//                    library = emptyList(),
+//                    station = emptyList()
+//                )
+//
+//                val song = Song(
+//                    id = cursor.getLong(_ID_Index),
+//                    href = musicUri.path ?: "",
+//                    attributes = songAttribute,
+//                    relationships = songRelationship,
+//                )
 
-
-                val songRelationship = SongRelationships(
-                    albums = listOf(cursor.getLong(ALBUM_ID_Index)),
-                    artists = listOf(cursor.getLong(ARTIST_ID_Index)),
-                    composers = emptyList(),
-                    genres = emptyList(),
-                    library = emptyList(),
-                    station = emptyList()
-                )
-
-                val song = Song(
-                    id = cursor.getLong(_ID_Index),
-                    href = musicUri.path ?: "",
-                    attributes = songAttribute,
-                    relationships = songRelationship,
-                )
+                if (tracksLoaded.contains(cursor.getLong(_ID_Index))) {
+                    continue
+                }
 
                 val track = Track(
                     id = cursor.getLong(_ID_Index),
@@ -218,7 +229,8 @@ object MediaManager {
                     artistName = cursor.getStringOrNull(ARTIST_Index),
                     name = cursor.getStringOrNull(TITLE_Index) ?: "Unknow Title",
                     durationInMillis = cursor.getIntOrNull(DURATION_Index) ?: 0,
-                    hasLyrics = false
+                    hasLyrics = false,
+                    albumId = cursor.getLong(ALBUM_ID_Index)
                 )
 
 //                songList.add(song)
@@ -253,8 +265,8 @@ object MediaManager {
                     val albumEntity = AlbumEntity(
                         id = cursor.getLong(ALBUM_ID_Index),
                         href = albumUri.toString(),
-                        artistName = song.attributes.artistName ?: "Unknow Artist",
-                        albumName = song.attributes.albumName ?: "Unknown Album",
+                        artistName = track.artistName ?: "Unknow Artist",
+                        albumName = track.albumName ?: "Unknown Album",
                         artwork = artwork,
                         isSingle = false,
                         isComplete = false,
@@ -272,11 +284,10 @@ object MediaManager {
 
                     val tracks = mutableListOf(track)
 
-
-
                     insertAlbum.add(
                         InsertAlbum(albumEntity, tracks, genres)
                     )
+
 
                 }
 

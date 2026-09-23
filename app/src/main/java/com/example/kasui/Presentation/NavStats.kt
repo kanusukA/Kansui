@@ -1,14 +1,11 @@
 package com.example.kasui.Presentation
 
-import android.net.Uri
 import com.example.kasui.Data.structure.album.Album
-import com.example.kasui.Data.structure.song.Track
 import com.example.kasui.Presentation.screens.home.AlbumScreenState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 
 enum class NavState {
@@ -36,7 +33,7 @@ sealed class NavRoutes(
     data class Album(val route: String = "Album", val popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
 
-    data class Player(val route: String = "Player", val popBackStack: Boolean = false) :
+    data class PlayerView(val route: String = "Player", val popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
 
     data class WelcomeLogin(
@@ -73,6 +70,10 @@ object NavManager {
     private var _navStates: MutableStateFlow<NavRoutes> = MutableStateFlow(NavRoutes.WelcomeLogin())
     val navStates: StateFlow<NavRoutes> = _navStates
 
+    private var _playerViewState: MutableStateFlow<PlayerFullViewState> =
+        MutableStateFlow(PlayerFullViewState.HIDDEN)
+    val playerViewState = _playerViewState.asStateFlow()
+
 
     private var _selectedAlbum: MutableStateFlow<Album?> = MutableStateFlow(null)
     val selectedAlbum = _selectedAlbum.asStateFlow()
@@ -89,23 +90,21 @@ object NavManager {
         changeNavState(NavRoutes.Album())
     }
 
-    private var _miniPlayerVisible = _navStates.map {
-        it.navRoute != NavRoutes.Player().route
-    }
-    val miniPlayerVisible = _miniPlayerVisible
+    private var _miniPlayerViewVisible = MutableStateFlow<Boolean>(true)
+    val miniPlayerVisible = _miniPlayerViewVisible
 
-    private var _playingTrack: MutableStateFlow<Track?> = MutableStateFlow(
-        Track(
-            id = 0L,
-            albumName = "Long Nights and Wasted Affairs",
-            artistName = "Mind's Eye",
-            durationInMillis = 3000,
-            name = "astrology Girl",
-            hasLyrics = false,
-            uri = Uri.EMPTY
-        )
-    )
-    val playingTrack = _playingTrack.asStateFlow()
+//    private var _playingTrack: MutableStateFlow<Track?> = MutableStateFlow(
+//        Track(
+//            id = 0L,
+//            albumName = "Long Nights and Wasted Affairs",
+//            artistName = "Mind's Eye",
+//            durationInMillis = 3000,
+//            name = "astrology Girl",
+//            hasLyrics = false,
+//            uri = Uri.EMPTY
+//        )
+//    )
+//    val playingTrack = _playingTrack.asStateFlow()
 
     // INTER_VIEWMODEL_VARIABLES
     private var _albumScreenState: MutableStateFlow<AlbumScreenState> =
@@ -123,9 +122,24 @@ object NavManager {
         _topBarVisibility.update { visibility }
     }
 
-    fun playTrack(track: Track) {
-        _playingTrack.update { track }
+    fun setMiniPlayerView(visibility: Boolean) {
+        _miniPlayerViewVisible.update { visibility }
     }
 
+    fun changePlayerViewState(state: PlayerFullViewState) {
+        _playerViewState.update { state }
+    }
+
+//    fun playTrack(track: Track) {
+//        _playingTrack.update { track }
+//    }
+
+}
+
+enum class PlayerFullViewState {
+    PLAYING,
+    QUEUE,
+    LYRICS,
+    HIDDEN
 }
 

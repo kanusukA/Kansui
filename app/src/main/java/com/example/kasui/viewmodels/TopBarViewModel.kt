@@ -18,7 +18,7 @@ import kotlinx.coroutines.launch
 
 
 class TopBarViewModel(
-    
+    val playerViewModel: PlayerViewModel
 ) : ViewModel() {
     // EXTERNAL
     lateinit var navState: StateFlow<NavRoutes>

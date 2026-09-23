@@ -5,6 +5,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -58,6 +59,7 @@ import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.textColor
+import com.example.kasui.viewmodels.Player
 
 @Composable
 fun AlbumScreen(
@@ -202,7 +204,13 @@ fun AlbumScreen(
             }
             items(tracks.size) { index ->
                 Text(
-                    tracks[index].name,
+                    modifier = Modifier.clickable(
+                        indication = null,
+                        interactionSource = null,
+                        onClick = {
+                            Player.setTrackAtHead(tracks[index])
+                        }),
+                    text = tracks[index].name,
                     fontFamily = UncutSans,
                     fontSize = 20.sp,
                     color = textColor,

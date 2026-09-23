@@ -6,29 +6,20 @@ import androidx.annotation.RequiresExtension
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.grid.rememberLazyGridState
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.LinearGradientShader
-import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.tooling.preview.Preview
@@ -49,10 +40,9 @@ import com.example.kasui.Presentation.screens.home.WelcomeScreen
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.viewmodels.MainViewModel
+import com.example.kasui.viewmodels.PlayerViewModel
 import com.example.kasui.viewmodels.TopBarViewModel
 import com.example.kasui.viewmodels.WelcomeViewmodel
-import kotlinx.coroutines.delay
-import kotlin.time.Duration.Companion.milliseconds
 
 @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 15)
 @Composable
@@ -62,7 +52,13 @@ fun NavScreen(
 
     val navController = rememberNavController()
 
-    val topBarViewModel: TopBarViewModel = viewModel()
+    val playerViewModel: PlayerViewModel = viewModel {
+        PlayerViewModel(mainViewModel)
+    }
+
+    val topBarViewModel: TopBarViewModel = viewModel() {
+        TopBarViewModel(playerViewModel)
+    }
 
     val navState by NavManager.navStates.collectAsStateWithLifecycle()
 
@@ -70,6 +66,16 @@ fun NavScreen(
 
     var isScrolledPastFirstItem by remember {
         mutableStateOf(false)
+    }
+
+    val playerFullViewState by NavManager.playerViewState.collectAsStateWithLifecycle()
+
+    val miniPlayerVisible by NavManager.miniPlayerVisible.collectAsStateWithLifecycle()
+
+    val currentTrack by playerViewModel.currentTrack.collectAsStateWithLifecycle()
+
+    LaunchedEffect(navState, currentTrack) {
+        NavManager.setMiniPlayerView(navState.navRoute != PlayerView().route && currentTrack != null)
     }
 
     val animTopGradientIntensity = animateFloatAsState(
@@ -95,11 +101,16 @@ fun NavScreen(
                 is WelcomeSearchAlbum -> navController.navigate(WelcomeSearchAlbum().route)
                 is WelcomeLogin -> navController.navigate(WelcomeLogin().route)
                 is WelcomeSetupAlbum -> navController.navigate(WelcomeSetupAlbum().route)
-                is Player -> navController.navigate(Player().route)
+                is PlayerView -> {
+                    NavManager.changePlayerViewState(PlayerFullViewState.PLAYING)
+                    navController.navigate(PlayerView().route)
+                }
             }
         }
 
+
     }
+
 
     val welcomeViewmodel: WelcomeViewmodel = viewModel(key = "WELCOME_VIEWMODEL")
 
@@ -207,14 +218,19 @@ fun NavScreen(
                     )
                 }
 
-                composable(route = Player().route) {
+                composable(route = PlayerView().route) {
                     BackHandler(enabled = true) {
                         println("POP back")
-                        when (navState) {
-                            else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
+                        if (playerFullViewState == PlayerFullViewState.QUEUE || playerFullViewState == PlayerFullViewState.LYRICS) {
+                            NavManager.changePlayerViewState(PlayerFullViewState.PLAYING)
+                        } else {
+                            when (navState) {
+                                else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
+                            }
                         }
+
                     }
-                    PlayerFullView(modifier = Modifier)
+                    PlayerFullView(modifier = Modifier, playerViewModel)
                 }
 //
 //                composable(route = NavRoutes.Home().route) {
@@ -242,12 +258,12 @@ fun NavScreen(
             )
 
             //PlayerFullView(modifier = Modifier)
-            //PlayerView(modifier = Modifier.align(Alignment.BottomCenter))
-            if (navState.navRoute != Player().route) {
+            //PlayerView(modifier = Modifier.align(Align      ment.BottomCenter))
+            if (miniPlayerVisible) {
                 PlayerView(
                     modifier = Modifier
-                        .align(Alignment.BottomCenter)
-
+                        .align(Alignment.BottomCenter),
+                    playerViewModel
                 )
             }
 

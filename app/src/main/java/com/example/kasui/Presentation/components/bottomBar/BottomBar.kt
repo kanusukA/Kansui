@@ -79,6 +79,9 @@ import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.NavState
 import com.example.kasui.Presentation.WelcomeSubRoutes
+import com.example.kasui.Presentation.screens.home.HomeIcon
+import com.example.kasui.Presentation.screens.home.LibraryIcon
+import com.example.kasui.Presentation.screens.home.SearchIcon
 
 
 import com.example.kasui.R
@@ -154,8 +157,9 @@ fun BottomBar(
     @Composable
     fun HomeScreenTabs() {
         BottomBarTab(
-
-            icon = R.drawable.home,
+            iconArea = {
+                HomeIcon(size = 24)
+            },
             title = "Home",
             selected = navState.navRoute == NavRoutes.Home().route,
             onHold = onHold,
@@ -163,7 +167,7 @@ fun BottomBar(
             onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Home()) })
 
         BottomBarTab(
-            icon = R.drawable.search,
+            iconArea = { SearchIcon(size = 24) },
             title = "Search",
             selected = navState.navRoute == NavRoutes.Search().route,
             onHold = onHold,
@@ -171,7 +175,7 @@ fun BottomBar(
             onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Search()) })
 
         BottomBarTab(
-            icon = R.drawable.library,
+            iconArea = { LibraryIcon(size = 24) },
             title = "Library",
             selected = navState.navRoute == NavRoutes.Library().route,
             onHold = onHold,
@@ -418,6 +422,114 @@ private fun BottomBarTab(
                     )
                 }
             }
+            AnimatedVisibility(selected) {
+                Text(
+                    modifier = Modifier,
+                    text = title,
+                    fontFamily = ViaodaLibre,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 18.sp,
+                    color = animatedTextColor.value
+                )
+            }
+            Spacer(modifier.width(16.dp))
+
+        }
+    }
+
+
+}
+
+
+@Composable
+private fun BottomBarTab(
+    modifier: Modifier = Modifier,
+    iconArea: @Composable () -> Unit,
+    title: String,
+    selected: Boolean,
+    onHold: Boolean,
+    dragPositionY: Float = 0f,
+    onClick: () -> Unit
+) {
+
+    val animatedBGColor = animateColorAsState(
+        if (selected)
+            variantHighColor
+        else
+            surfaceColor,
+        animationSpec = tween(easing = EaseIn)
+    )
+    val animatedTextColor = animateColorAsState(
+        if (selected)
+            surfaceHighColor
+        else
+            TitleDarkColor,
+        animationSpec = tween(easing = EaseIn)
+    )
+
+    var itemPosWidth by remember { mutableStateOf(Offset(0f, 0f)) }
+
+    val onDragSelected by remember(dragPositionY) {
+        derivedStateOf {
+            dragPositionY in itemPosWidth.x..itemPosWidth.y
+        }
+    }
+    LaunchedEffect(onDragSelected) {
+        if (onDragSelected) {
+            onClick()
+        }
+    }
+
+    val animatedDragPosition = animateDpAsState(if (onDragSelected && onHold) 24.dp else 0.dp)
+
+    Box(
+        modifier = modifier
+            .requiredHeight(42.dp)
+            .widthIn(max = if (selected) Dp.Unspecified else 64.dp),
+        contentAlignment = Alignment.Center
+    ) {
+        Row(
+            modifier = Modifier
+                .height(42.dp)
+                .offset(0.dp, -animatedDragPosition.value)
+                .onPlaced({
+                    itemPosWidth = Offset(
+                        it.positionOnScreen().x,
+                        it.positionOnScreen().x + it.size.width.toFloat()
+                    )
+
+                })
+                .clip(shape = CircleShape)
+                .pointerInput(Unit) {
+                    awaitEachGesture {
+                        val down = awaitFirstDown()
+                        if (down.pressed) {
+                            onClick()
+                        }
+                    }
+                }
+
+                .background(color = animatedBGColor.value, shape = CircleShape),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceEvenly
+        ) {
+            Spacer(modifier.width(12.dp))
+            iconArea()
+//            if (icon != null) {
+//                Box(
+//                    Modifier
+//                        .size(42.dp),
+//
+//                    //            .background(color = surfaceColor, shape = CircleShape),
+//                    contentAlignment = Alignment.Center
+//                ) {
+//                    Icon(
+//                        painterResource(icon),
+//                        contentDescription = null,
+//                        tint = animatedTextColor.value
+//                    )
+//                }
+//            }
             AnimatedVisibility(selected) {
                 Text(
                     modifier = Modifier,

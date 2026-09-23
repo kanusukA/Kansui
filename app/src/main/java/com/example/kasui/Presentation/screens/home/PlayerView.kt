@@ -1,5 +1,9 @@
 package com.example.kasui.Presentation.screens.home
 
+import android.graphics.Paint
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -18,45 +22,59 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.graphics.vector.VectorProperty
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.room.util.TableInfo
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import coil3.compose.AsyncImage
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
+import com.example.kasui.Presentation.PlayerFullViewState
 import com.example.kasui.R
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.TitleDarkColor
+import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.surfaceHighColor
-import com.example.kasui.ui.textColor
-import com.example.kasui.viewmodels.HomeViewModel
+import com.example.kasui.ui.variantColor
+import com.example.kasui.ui.variantHighColor
+import com.example.kasui.viewmodels.Player
+import com.example.kasui.viewmodels.PlayerListener
+import com.example.kasui.viewmodels.PlayerStates
+import com.example.kasui.viewmodels.PlayerViewModel
 
 @Composable
 fun PlayerView(
-    modifier: Modifier,
+    modifier: Modifier = Modifier,
+    playerViewModel: PlayerViewModel
 ) {
     // Pill Space
+    val playerState by PlayerListener.playerState.collectAsStateWithLifecycle()
+    val trackQueue by playerViewModel.trackQueue.collectAsStateWithLifecycle()
+    val currentTrack by playerViewModel.currentTrack.collectAsStateWithLifecycle()
+    val currentAlbum by playerViewModel.currentAlbum.collectAsStateWithLifecycle()
+
+    val progress by Player.progress.collectAsStateWithLifecycle(0f)
+    val progressText by Player.ProgressText.collectAsStateWithLifecycle("0:00")
+
+    val animatedProgress = animateFloatAsState(progress)
+
 
     Box(
         modifier = modifier
@@ -82,16 +100,27 @@ fun PlayerView(
             )
             .clickable(interactionSource = null, indication = null, onClick = {
                 NavManager.changeNavState(
-                    NavRoutes.Player()
+                    NavRoutes.PlayerView()
                 )
             })
     ) {
+        Text(
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(6.dp),
+            text = progressText,
+            fontSize = 12.sp,
+            fontFamily = UncutSans,
+            color = variantHighColor,
+            fontWeight = FontWeight.Bold
+        )
+
         LinearWavyProgressIndicator(
             modifier = Modifier
                 .offset(y = 4.dp)
                 .align(Alignment.BottomCenter)
                 .fillMaxWidth(),
-            progress = { 0.2f },
+            progress = { animatedProgress.value },
             amplitude = { 0.8f },
             trackColor = surfaceColor,
             stroke = Stroke(width = 20f, cap = StrokeCap.Round),
@@ -110,7 +139,7 @@ fun PlayerView(
                     .padding(start = 8.dp)
                     .size(46.dp)
                     .clip(CircleShape),
-                model = R.drawable.cover,
+                model = currentAlbum?.album?.artwork?.bitmap ?: R.drawable.cover,
                 contentDescription = "Album Cover"
             )
 
@@ -118,7 +147,7 @@ fun PlayerView(
 
             Box(modifier = Modifier.fillMaxHeight()) {
                 Text(
-                    "astrology girl",
+                    currentTrack?.name ?: "",
                     fontFamily = ViaodaLibre,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
@@ -126,7 +155,7 @@ fun PlayerView(
                 )
                 Text(
                     modifier = Modifier.padding(top = 22.dp),
-                    text = "Long Nights and Wasted Affairs",
+                    text = currentTrack?.albumName ?: "",
                     fontFamily = ViaodaLibre,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
@@ -134,7 +163,7 @@ fun PlayerView(
                 )
                 Text(
                     modifier = Modifier.padding(top = 40.dp),
-                    text = "Mind's Eye",
+                    text = currentTrack?.artistName ?: "",
                     fontFamily = ViaodaLibre,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
@@ -144,23 +173,66 @@ fun PlayerView(
 
             Spacer(modifier = Modifier.width(12.dp))
 
-            PlayIcon(
+            AnimatedContent(playerState) { it ->
+                when (it) {
 
-                size = 40,
-                size2 = 40,
-                spacing = 8.dp
-            )
+                    PlayerStates.PLAYING -> {
+                        PlayIcon(
+                            modifier = Modifier.clickable(
+                                indication = null,
+                                interactionSource = null,
+                                onClick = {
+                                    Player.pause()
+                                }),
+                            size = 40,
+                            size2 = 40,
+                            spacing = 8.dp
+                        )
+                    }
+
+                    else -> {
+                        PauseIcon(
+                            modifier = Modifier.clickable(
+                                indication = null,
+                                interactionSource = null,
+                                onClick = {
+                                    Player.play()
+                                }),
+                            size = 48
+                        )
+                    }
+                }
+            }
             Spacer(modifier = Modifier.width(12.dp))
 
         }
-
     }
+
 }
 
 @Composable
 fun PlayerFullView(
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    playerViewModel: PlayerViewModel
 ) {
+
+    val playerState by PlayerListener.playerState.collectAsStateWithLifecycle()
+    val trackQueue by playerViewModel.trackQueue.collectAsStateWithLifecycle()
+    val currentAlbum by playerViewModel.currentAlbum.collectAsStateWithLifecycle()
+
+    val player by Player.exoPlayer.collectAsStateWithLifecycle()
+
+    val progress by Player.progress.collectAsStateWithLifecycle(0f)
+    val progressText by Player.ProgressText.collectAsStateWithLifecycle("")
+
+    val animatedProgress = animateFloatAsState(progress, animationSpec = tween(400))
+
+//    LaunchedEffect(player) {
+//        if (player?.contentDuration != null && player!!.contentDuration > 0) {
+//            position = (player!!.contentPosition / player!!.contentDuration).toFloat()
+//        }
+//        delay(300.milliseconds)
+//    }
 
     Box(
         Modifier
@@ -170,7 +242,7 @@ fun PlayerFullView(
 
         Column(
             modifier = Modifier
-                .padding(top = 24.dp)
+                .padding(top = 12.dp)
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
@@ -178,7 +250,7 @@ fun PlayerFullView(
             CloseIcon(
                 modifier = Modifier
                     .align(Alignment.End)
-                    .padding(end = 24.dp, bottom = 16.dp)
+                    .padding(end = 24.dp, bottom = 8.dp)
                     .clickable(onClick = { NavManager.changeNavState(NavRoutes.Home()) }),
                 48
             )
@@ -187,21 +259,36 @@ fun PlayerFullView(
                 modifier = Modifier
                     .size(360.dp)
                     .clip(RoundedCornerShape(24.dp)),
-                model = R.drawable.cover,
+                model = currentAlbum?.album?.artwork?.bitmap ?: R.drawable.cover,
                 contentDescription = "Album Cover"
             )
 
-            Spacer(modifier = Modifier.height(160.dp))
+            Spacer(modifier = Modifier.height(140.dp))
 
             LinearWavyProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
-                progress = { 0.2f },
+                progress = {
+                    animatedProgress.value
+                },
                 amplitude = { 0.8f },
                 trackColor = surfaceHighColor,
                 stroke = Stroke(width = 20f, cap = StrokeCap.Round),
                 color = TitleColor,
                 waveSpeed = 12.dp
             )
+
+            Text(
+                modifier = Modifier
+                    .align(Alignment.End)
+                    .padding(end = 12.dp),
+                text = progressText,
+                fontSize = 18.sp,
+                fontFamily = UncutSans,
+                color = variantHighColor,
+                fontWeight = FontWeight.Bold
+            )
+
+
 
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -214,14 +301,72 @@ fun PlayerFullView(
             ) {
                 PreviousIcon(size = 72)
 
-                PlayIcon(size = 72)
+                AnimatedContent(playerState) { it ->
+                    when (it) {
+
+                        PlayerStates.PLAYING -> {
+                            PlayIcon(
+                                modifier = Modifier.clickable(
+                                    indication = null,
+                                    interactionSource = null,
+                                    onClick = {
+                                        Player.pause()
+                                    }),
+                                size = 64,
+                                spacing = 8.dp
+                            )
+                        }
+
+                        else -> {
+                            PauseIcon(
+                                modifier = Modifier.clickable(
+                                    indication = null,
+                                    interactionSource = null,
+                                    onClick = {
+                                        Player.play()
+                                    }),
+                                size = 74
+                            )
+                        }
+                    }
+                }
                 // PauseIcon(size = 64)
 
                 NextIcon(size = 72)
             }
+
+            Row(
+                modifier = Modifier
+                    .padding(horizontal = 32.dp)
+                    .fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    modifier = modifier,
+                    text = "Lyrics",
+                    fontSize = 28.sp,
+                    color = TitleColor,
+                    fontWeight = FontWeight.Normal,
+                    fontFamily = ViaodaLibre
+                )
+                Text(
+                    modifier = modifier.clickable(
+                        indication = null,
+                        interactionSource = null,
+                        onClick = {
+                            NavManager.changePlayerViewState(PlayerFullViewState.QUEUE)
+                        }),
+                    text = "Queue",
+                    fontSize = 28.sp,
+                    color = TitleColor,
+                    fontWeight = FontWeight.Normal,
+                    fontFamily = ViaodaLibre
+                )
+            }
         }
 
     }
+
 
 }
 
@@ -238,6 +383,90 @@ fun CloseIcon(
         fontWeight = FontWeight.ExtraBold,
         fontFamily = ViaodaLibre
     )
+}
+
+@Composable
+fun HomeIcon(
+    modifier: Modifier = Modifier,
+    size: Int
+) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Text(
+            "H",
+            fontSize = size.sp,
+            color = TitleDarkColor,
+            fontWeight = FontWeight.ExtraBold,
+            fontFamily = ViaodaLibre
+        )
+        Text(
+            modifier = Modifier
+//                .rotate(180f)
+                .offset(y = -8.dp),
+            text = "^",
+            fontSize = (size + 32).sp,
+            color = TitleDarkColor,
+            fontWeight = FontWeight.SemiBold,
+            fontFamily = ViaodaLibre
+        )
+    }
+}
+
+@Composable
+fun SearchIcon(
+    modifier: Modifier = Modifier,
+    size: Int
+) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Text(
+            "O",
+            fontSize = size.sp,
+            color = TitleDarkColor,
+            fontWeight = FontWeight.ExtraBold,
+            fontFamily = ViaodaLibre
+        )
+        Text(
+            modifier = Modifier
+                .rotate(-20f)
+                .offset(x = 7.dp, y = 15.dp),
+            text = "\\",
+            fontSize = (size + 24).sp,
+            color = TitleDarkColor,
+            fontWeight = FontWeight.Black,
+            fontFamily = ViaodaLibre
+        )
+    }
+}
+
+@Composable
+fun LibraryIcon(
+    modifier: Modifier = Modifier,
+    size: Int
+) {
+    Box(modifier = modifier, contentAlignment = Alignment.Center) {
+        Text(
+            text = "&",
+            fontSize = (size).sp,
+            color = TitleDarkColor,
+            fontWeight = FontWeight.Black,
+            fontFamily = ViaodaLibre
+        )
+        Text(
+            modifier = Modifier.offset(x = 1.dp, y = 7.dp),
+            text = "S",
+            fontSize = (size - 8).sp,
+            color = TitleDarkColor,
+            fontWeight = FontWeight.Black,
+            fontFamily = ViaodaLibre
+        )
+
+
+    }
+}
+
+@Preview
+@Composable
+fun previewHomeIcon() {
+    LibraryIcon(size = 24)
 }
 
 @Composable

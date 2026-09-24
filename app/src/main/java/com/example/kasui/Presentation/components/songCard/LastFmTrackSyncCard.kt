@@ -19,7 +19,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.kasui.Data.LastFm.LastFmSearchTrackMatches
 import com.example.kasui.Data.LastFm.LastFmTrack
@@ -52,12 +54,13 @@ fun LastFmTrackSyncCard(
                 .background(color = surfaceHighestColor)
         ) {
 
-            AsyncImage(
-                modifier = Modifier.size(70.dp),
-                model = rawSong.attributes.artwork?.bitmap ?: R.drawable.cover,
-                contentScale = ContentScale.FillHeight,
-                contentDescription = null
-            )
+//            AsyncImage(
+//                modifier = Modifier.size(70.dp),
+//                model = rawSong.attributes.artwork?.getBitmap(LocalContext.current)
+//                    ?.collectAsStateWithLifecycle(null)?.value ?: R.drawable.cover,
+//                contentScale = ContentScale.FillHeight,
+//                contentDescription = null
+//            )
             Column(verticalArrangement = Arrangement.SpaceEvenly) {
                 Text(rawSong.attributes.name)
                 Text(rawSong.attributes.artistName ?: "Unknown")

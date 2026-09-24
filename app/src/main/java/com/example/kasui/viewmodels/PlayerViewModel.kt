@@ -10,7 +10,7 @@ import kotlinx.coroutines.flow.stateIn
 
 
 class PlayerViewModel(
-    private val mainViewModel: MainViewModel
+    val mainViewModel: MainViewModel
 ) : ViewModel() {
 
     val trackQueue = mainViewModel.dbTracks.combine(PlayerListener.trackQueue) { tracks, ids ->

@@ -10,13 +10,7 @@ class HomeViewModel(
     private val albumRepository: AlbumRepository,
     private val mainViewModel: MainViewModel
 ) : ViewModel() {
-
-    val songList = MediaManager.rawSongList
     val albumsList = mainViewModel.dbAlbums
-
-    val albumResult = MediaManager.searchAlbumList
-
-
     fun navToAlbumScreen(album: Album) {
         NavManager.navToAlbumView(album)
     }

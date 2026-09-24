@@ -12,6 +12,7 @@ import androidx.annotation.RequiresExtension
 import androidx.core.database.getIntOrNull
 import androidx.core.database.getStringOrNull
 import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.application
 import coil3.Bitmap
 import com.example.kasui.Data.MusicBrainZ.musicBrainz
 import com.example.kasui.Data.local.AlbumDatabase
@@ -60,18 +61,18 @@ object MediaManager {
     }
 
 
-    private var _rawSongList = MutableStateFlow(listOf<Song>())
-    val rawSongList: StateFlow<List<Song>> = _rawSongList
+//    private var _rawSongList = MutableStateFlow(listOf<Song>())
+//    val rawSongList: StateFlow<List<Song>> = _rawSongList
 
-    private var _rawAlbumList = MutableStateFlow(listOf<Album>())
-    val rawAlbumList: StateFlow<List<Album>> = _rawAlbumList
+//    private var _rawAlbumList = MutableStateFlow(listOf<Album>())
+//    val rawAlbumList: StateFlow<List<Album>> = _rawAlbumList
 
     private var _insertAlbums = MutableStateFlow(listOf<InsertAlbum>())
 
 
     // key is the index of _rawSongList
-    private var _searchAlbumList = MutableStateFlow(mapOf<Int, List<Album>>())
-    val searchAlbumList = _searchAlbumList.asStateFlow()
+//    private var _searchAlbumList = MutableStateFlow(mapOf<Int, List<Album>>())
+//    val searchAlbumList = _searchAlbumList.asStateFlow()
 
 
     private var _mediaState: MutableStateFlow<MediaManagerState> = MutableStateFlow(
@@ -91,7 +92,7 @@ object MediaManager {
 
     suspend fun fetchMusicFiles(context: Context) {
         val tracksLoaded = mutableListOf<Long>()
-        val dbSongs = albumRepository?.getAllTracks()?.collect { it ->
+        albumRepository?.getAllTracks()?.collect { it ->
             it.forEach { track ->
                 tracksLoaded.add(track.id)
             }
@@ -155,9 +156,12 @@ object MediaManager {
                 val musicUri = ContentUris.withAppendedId(uri, cursor.getLong(_ID_Index))
                 val albumUri = ContentUris.withAppendedId(uri, cursor.getLong(ALBUM_ID_Index))
 
-                var bitmap: Bitmap? = null
-
-                bitmap = fetchArtworkFromTrackUri(context, musicUri)
+                if (tracksLoaded.contains(cursor.getLong(_ID_Index))) {
+                    continue
+                }
+//                var bitmap: Bitmap? = null
+//
+//                bitmap = fetchArtworkFromTrackUri(context, musicUri)
 
 //                if (bitmap != null) {
 //                    //println("${bitmap.width} : ${bitmap.height}")
@@ -218,10 +222,6 @@ object MediaManager {
 //                    relationships = songRelationship,
 //                )
 
-                if (tracksLoaded.contains(cursor.getLong(_ID_Index))) {
-                    continue
-                }
-
                 val track = Track(
                     id = cursor.getLong(_ID_Index),
                     uri = musicUri,
@@ -254,7 +254,7 @@ object MediaManager {
                         width = 600,
                         url = null,
                         uri = musicUri,
-                        bitmap = bitmap,
+                        bitmap = null,
                         bgColor = null,
                         textColor1 = null,
                         textColor2 = null,
@@ -281,7 +281,6 @@ object MediaManager {
                         )
                     )
 
-
                     val tracks = mutableListOf(track)
 
                     insertAlbum.add(
@@ -294,9 +293,7 @@ object MediaManager {
             }
         }
         _insertAlbums.update { insertAlbum }
-//        _rawSongList.update { songList }
-//        _rawAlbumList.update { albumList }
-        saveAlbumData()
+        //saveAlbumData()
         _mediaState.update { MediaManagerState.FREE }
 
     }
@@ -319,6 +316,7 @@ object MediaManager {
             retriever.release() // Always free up system resources
         }
     }
+
 
     @Deprecated(message = "USE TRACK INSTEAD")
     fun fetchSongsFromAlbum(album: Album): List<Song> {

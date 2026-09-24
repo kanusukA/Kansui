@@ -1,9 +1,18 @@
 package com.example.kasui.Presentation.screens.home
 
+import android.graphics.Bitmap
 import android.graphics.Paint
+import android.provider.CalendarContract
+import android.text.style.BackgroundColorSpan
 import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.animateIntAsState
+import androidx.compose.animation.core.animateIntSizeAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -20,25 +29,40 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import coil3.compose.AsyncImage
@@ -75,6 +99,8 @@ fun PlayerView(
 
     val animatedProgress = animateFloatAsState(progress)
 
+    val artwork = currentAlbum?.album?.artwork?.getBitmap(LocalContext.current)
+        ?.collectAsStateWithLifecycle(null)?.value
 
     Box(
         modifier = modifier
@@ -139,7 +165,7 @@ fun PlayerView(
                     .padding(start = 8.dp)
                     .size(46.dp)
                     .clip(CircleShape),
-                model = currentAlbum?.album?.artwork?.bitmap ?: R.drawable.cover,
+                model = artwork ?: R.drawable.cover,
                 contentDescription = "Album Cover"
             )
 
@@ -219,6 +245,9 @@ fun PlayerFullView(
     val playerState by PlayerListener.playerState.collectAsStateWithLifecycle()
     val trackQueue by playerViewModel.trackQueue.collectAsStateWithLifecycle()
     val currentAlbum by playerViewModel.currentAlbum.collectAsStateWithLifecycle()
+    val currentTrack by playerViewModel.currentTrack.collectAsStateWithLifecycle()
+
+    val playerFullViewState by NavManager.playerViewState.collectAsStateWithLifecycle()
 
     val player by Player.exoPlayer.collectAsStateWithLifecycle()
 
@@ -227,12 +256,46 @@ fun PlayerFullView(
 
     val animatedProgress = animateFloatAsState(progress, animationSpec = tween(400))
 
-//    LaunchedEffect(player) {
-//        if (player?.contentDuration != null && player!!.contentDuration > 0) {
-//            position = (player!!.contentPosition / player!!.contentDuration).toFloat()
-//        }
-//        delay(300.milliseconds)
-//    }
+    val adaptiveTextSizeChange by remember(playerFullViewState) {
+        mutableIntStateOf(
+            when (playerFullViewState) {
+                PlayerFullViewState.QUEUE -> 16
+                else -> 0
+            }
+        )
+    }
+    val albumTint by remember(playerFullViewState) {
+        mutableStateOf(
+            when (playerFullViewState) {
+                PlayerFullViewState.QUEUE -> surfaceColor.copy(alpha = 0.85f)
+                else -> Color.Transparent.copy(alpha = 0f)
+            }
+        )
+    }
+
+    val animAlbumTint = animateColorAsState(albumTint)
+
+    val animAdaptiveTextSizeChange = animateIntAsState(adaptiveTextSizeChange)
+
+    var currentTrackIndex by remember {
+        mutableIntStateOf(0)
+    }
+
+    val queueState = rememberLazyListState()
+
+    LaunchedEffect(playerFullViewState) {
+        if (playerFullViewState == PlayerFullViewState.QUEUE) {
+            queueState.animateScrollToItem(currentTrackIndex)
+        }
+    }
+
+    LaunchedEffect(Unit, currentTrack) {
+        currentTrackIndex = player?.currentMediaItemIndex ?: 0
+    }
+
+    val artwork =
+        currentAlbum?.album?.artwork?.getBitmap(LocalContext.current)
+            ?.collectAsStateWithLifecycle(null)?.value
 
     Box(
         Modifier
@@ -246,24 +309,103 @@ fun PlayerFullView(
                 .fillMaxSize(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            CloseIcon(
+            Box(
                 modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(end = 24.dp, bottom = 8.dp)
-                    .clickable(onClick = { NavManager.changeNavState(NavRoutes.Home()) }),
-                48
-            )
+                    .fillMaxWidth()
+                    .height(600.dp + (animAdaptiveTextSizeChange.value * 5).dp)
+            ) {
 
-            AsyncImage(
-                modifier = Modifier
-                    .size(360.dp)
-                    .clip(RoundedCornerShape(24.dp)),
-                model = currentAlbum?.album?.artwork?.bitmap ?: R.drawable.cover,
-                contentDescription = "Album Cover"
-            )
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    CloseIcon(
+                        modifier = Modifier
+                            .align(Alignment.End)
+                            .padding(end = 24.dp, bottom = 8.dp)
+                            .clickable(onClick = { NavManager.changeNavState(NavRoutes.Home()) }),
+                        48
+                    )
 
-            Spacer(modifier = Modifier.height(140.dp))
+                    AsyncImage(
+                        modifier = Modifier
+                            .align(Alignment.CenterHorizontally)
+                            .size(360.dp)
+                            .clip(RoundedCornerShape(24.dp)),
+                        model = artwork ?: R.drawable.cover,
+                        contentDescription = "Album Cover",
+                        colorFilter = ColorFilter.tint(
+                            animAlbumTint.value,
+                            blendMode = BlendMode.SrcAtop
+                        )
+                    )
+
+//                    Spacer(modifier = Modifier.height(140.dp + (animAdaptiveTextSizeChange.value * 5).dp))
+                }
+
+                androidx.compose.animation.AnimatedVisibility(
+                    modifier = Modifier.align(Alignment.Center),
+                    visible = playerFullViewState == PlayerFullViewState.QUEUE,
+                    enter = slideInHorizontally { it * 2 },
+                    exit = slideOutHorizontally { it * 2 }
+                ) {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth(),
+                        state = queueState,
+                        horizontalAlignment = Alignment.End
+                    ) {
+                        item { Spacer(modifier = Modifier.height(120.dp)) }
+
+                        items(trackQueue.size) { trackIndex ->
+                            Spacer(modifier = Modifier.height(12.dp))
+                            if (currentTrackIndex == trackIndex) {
+                                Text(
+                                    modifier = Modifier
+                                        .padding(end = 12.dp),
+                                    text = trackQueue[trackIndex].name,
+                                    fontSize = 28.sp,
+                                    fontFamily = ViaodaLibre,
+                                    color = TitleColor,
+                                    fontWeight = FontWeight.Bold
+                                )
+                            } else {
+                                Text(
+                                    modifier = Modifier
+                                        .padding(end = 12.dp),
+                                    text = trackQueue[trackIndex].name,
+                                    fontSize = 20.sp,
+                                    fontFamily = UncutSans,
+                                    color = variantColor,
+                                    fontWeight = FontWeight.SemiBold
+                                )
+                            }
+
+
+                            Spacer(modifier = Modifier.height(12.dp))
+                            HorizontalDivider()
+                        }
+                        item { Spacer(modifier = Modifier.height(120.dp)) }
+                    }
+
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight()
+                            .background(
+                                brush = Brush.verticalGradient(
+                                    listOf(
+                                        Color.Transparent,
+                                        Color.Transparent,
+                                        Color.Transparent,
+                                        Color.Transparent,
+                                        surfaceColor
+                                    )
+                                )
+                            )
+                    )
+                }
+            }
+
+            // QUEUE
+
 
             LinearWavyProgressIndicator(
                 modifier = Modifier.fillMaxWidth(),
@@ -288,9 +430,7 @@ fun PlayerFullView(
                 fontWeight = FontWeight.Bold
             )
 
-
-
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(12.dp - animAdaptiveTextSizeChange.value.dp))
 
             Row(
                 modifier = Modifier
@@ -299,7 +439,15 @@ fun PlayerFullView(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                PreviousIcon(size = 72)
+                PreviousIcon(
+                    modifier = Modifier.clickable(
+                        interactionSource = null,
+                        indication = null,
+                        onClick = {
+                            Player.onPrevious()
+                        }),
+                    size = 72 - animAdaptiveTextSizeChange.value
+                )
 
                 AnimatedContent(playerState) { it ->
                     when (it) {
@@ -312,7 +460,7 @@ fun PlayerFullView(
                                     onClick = {
                                         Player.pause()
                                     }),
-                                size = 64,
+                                size = 64 - animAdaptiveTextSizeChange.value,
                                 spacing = 8.dp
                             )
                         }
@@ -325,43 +473,53 @@ fun PlayerFullView(
                                     onClick = {
                                         Player.play()
                                     }),
-                                size = 74
+                                size = 74 - animAdaptiveTextSizeChange.value
                             )
                         }
                     }
                 }
                 // PauseIcon(size = 64)
 
-                NextIcon(size = 72)
+                NextIcon(
+                    modifier = Modifier.clickable(
+                        interactionSource = null,
+                        indication = null,
+                        onClick = {
+                            Player.onNext()
+                        }),
+                    size = 72 - animAdaptiveTextSizeChange.value
+                )
             }
 
-            Row(
-                modifier = Modifier
-                    .padding(horizontal = 32.dp)
-                    .fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    modifier = modifier,
-                    text = "Lyrics",
-                    fontSize = 28.sp,
-                    color = TitleColor,
-                    fontWeight = FontWeight.Normal,
-                    fontFamily = ViaodaLibre
-                )
-                Text(
-                    modifier = modifier.clickable(
-                        indication = null,
-                        interactionSource = null,
-                        onClick = {
-                            NavManager.changePlayerViewState(PlayerFullViewState.QUEUE)
-                        }),
-                    text = "Queue",
-                    fontSize = 28.sp,
-                    color = TitleColor,
-                    fontWeight = FontWeight.Normal,
-                    fontFamily = ViaodaLibre
-                )
+            AnimatedVisibility(playerFullViewState == PlayerFullViewState.PLAYING) {
+                Row(
+                    modifier = Modifier
+                        .padding(horizontal = 32.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Text(
+                        modifier = modifier,
+                        text = "Lyrics",
+                        fontSize = 28.sp,
+                        color = TitleColor,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = ViaodaLibre
+                    )
+                    Text(
+                        modifier = modifier.clickable(
+                            indication = null,
+                            interactionSource = null,
+                            onClick = {
+                                NavManager.changePlayerViewState(PlayerFullViewState.QUEUE)
+                            }),
+                        text = "Queue",
+                        fontSize = 28.sp,
+                        color = TitleColor,
+                        fontWeight = FontWeight.Normal,
+                        fontFamily = ViaodaLibre
+                    )
+                }
             }
         }
 

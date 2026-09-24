@@ -10,6 +10,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
@@ -35,7 +36,8 @@ fun SelectionAlbumCard(
         ) {
             AsyncImage(
                 modifier = Modifier.size(52.dp),
-                model = mediaAlbum.album.artwork.bitmap,
+                model = mediaAlbum.album.artwork.getBitmap(LocalContext.current)
+                    .collectAsStateWithLifecycle(null).value,
                 contentDescription = null
             )
 

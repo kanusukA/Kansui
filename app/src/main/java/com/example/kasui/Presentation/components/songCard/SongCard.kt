@@ -21,11 +21,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.R
@@ -53,7 +55,11 @@ fun SongCard(
             .requiredHeight(64.dp)
             .background(
                 brush = Brush.horizontalGradient(
-                    listOf(artwork?.bgColor ?: surfaceHighestColor, surfaceColor.copy(alpha = 0.55f), surfaceColor.copy(alpha = 0.65f))
+                    listOf(
+                        artwork?.bgColor ?: surfaceHighestColor,
+                        surfaceColor.copy(alpha = 0.55f),
+                        surfaceColor.copy(alpha = 0.65f)
+                    )
                 ), shape = RoundedCornerShape(22.dp)
             ),
         verticalAlignment = Alignment.CenterVertically,
@@ -66,17 +72,21 @@ fun SongCard(
                 .clip(shape = RoundedCornerShape(18.dp))
         ) {
             // Image(painterResource(R.drawable.cover),contentDescription = null)
-            AsyncImage(
-                modifier = Modifier.size(72.dp),
-                model = artwork?.bitmap,
-                contentDescription = null,
-                contentScale = ContentScale.Crop
-            )
+//            AsyncImage(
+//                modifier = Modifier.size(72.dp),
+//                model = artwork?.getBitmap(LocalContext.current)?.collectAsStateWithLifecycle(null)?.value,
+//                contentDescription = null,
+//                contentScale = ContentScale.Crop
+//            )
         }
 
         Spacer(modifier = Modifier.width(12.dp))
 
-        Column(modifier = Modifier.fillMaxHeight(), verticalArrangement = Arrangement.SpaceEvenly, horizontalAlignment = Alignment.Start) {
+        Column(
+            modifier = Modifier.fillMaxHeight(),
+            verticalArrangement = Arrangement.SpaceEvenly,
+            horizontalAlignment = Alignment.Start
+        ) {
             Text(
                 title,
                 fontFamily = UncutSans,
@@ -84,7 +94,7 @@ fun SongCard(
                 color = textColor,
                 fontWeight = FontWeight.Medium
             )
-            if (!albumView){
+            if (!albumView) {
                 Text(
                     album,
                     fontFamily = UncutSans,

@@ -2,6 +2,9 @@ package com.example.kasui.viewmodels
 
 import android.app.Application
 import android.content.Context
+import android.graphics.BitmapFactory
+import android.media.MediaMetadataRetriever
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
@@ -10,6 +13,7 @@ import com.example.kasui.Data.LastFm.LastFmManager
 import com.example.kasui.Data.local.AlbumDatabase
 import com.example.kasui.Data.local.AlbumRepository
 import com.example.kasui.Data.request.MediaManager
+import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.Data.structure.album.Album
 import com.example.kasui.Data.structure.song.Track
 //import com.example.kasui.Data.structure.MusicBrainz.Media
@@ -42,29 +46,30 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var dbAlbums: StateFlow<List<Album>>
     var dbTracks: StateFlow<List<Track>>
 
-    val rawSongs = MediaManager.rawSongList
-
     val loginCoroutine = CoroutineScope(Dispatchers.IO)
 
     init {
         val albumDao = AlbumDatabase.getInstance(application.applicationContext).getAlbumDao()
         val albumRepo = AlbumRepository(albumDao)
 
-        dbAlbums = albumRepo.albums.map {
-            it.map { album ->
-                if (album.album.artwork.bitmap == null && album.album.artwork.uri != null) {
-                    album.album.artwork.bitmap = MediaManager.fetchArtworkFromTrackUri(
-                        application.applicationContext,
-                        album.album.artwork.uri!!
-                    )
-                }
-                album
-            }
-        }.stateIn(
-            viewModelScope,
-            started = SharingStarted.Eagerly,
-            initialValue = emptyList()
-        )
+        dbAlbums = albumRepo.albums
+//            .map {
+//            it
+////            it.map { album ->
+////                if (album.album.artwork.bitmap == null && album.album.artwork.uri != null) {
+////                    album.album.artwork.bitmap = MediaManager.fetchArtworkFromTrackUri(
+////                        application.applicationContext,
+////                        album.album.artwork.uri!!
+////                    )
+////                }
+////                album
+////            }
+//        }
+            .stateIn(
+                viewModelScope,
+                started = SharingStarted.Eagerly,
+                initialValue = emptyList()
+            )
 
         dbTracks = albumRepo.getAllTracks()
             .stateIn(viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList())
@@ -119,6 +124,13 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
     }
+
+//    fun loadArtwork(artwork: Artwork){
+//        if (artwork.bitmap == null && artwork.uri != null){
+//            artwork.bitmap = fetchArtworkFromTrackUri(artwork.uri!!)
+//        }
+//        return artwork.bitmap
+//    }
 
 
 }

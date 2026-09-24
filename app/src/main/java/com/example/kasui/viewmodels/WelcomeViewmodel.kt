@@ -82,9 +82,6 @@ class WelcomeViewmodel : ViewModel() {
     }
 
 
-    val rawAlbums = MediaManager.rawAlbumList
-    val rawSongs = MediaManager.rawSongList
-
     val lastfmState = LastFmManager.lastFmState.map {
         if (it == LASTFM_STATE.SIGNED_IN && NavManager.navStates.value == NavRoutes.WelcomeLogin()) {
             NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())

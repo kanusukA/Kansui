@@ -60,7 +60,7 @@ fun WelcomeScreen(
 
     val mediaManagerState by mainViewModel.mediaManagerState.collectAsStateWithLifecycle()
     val rawAlbumList by mainViewModel.dbAlbums.collectAsStateWithLifecycle()
-    val rawSongList by mainViewModel.rawSongs.collectAsStateWithLifecycle()
+
     val selectedAlbumList by welcomeViewmodel.selectedAlbumsList.collectAsStateWithLifecycle()
     val selectedSongAlbumList by welcomeViewmodel.selectedSongAlbumList.collectAsStateWithLifecycle()
 
@@ -187,19 +187,19 @@ fun WelcomeScreen(
 
                     TopBarSelectionState.TRACKS_WELCOME -> {
                         items(searchTrackResult.size) { index ->
-                            val key = searchTrackResult.keys.toList()[index]
-                            val value = searchTrackResult[key]
-                            val song = rawSongList[key]
-                            if (value != null) {
-                                Spacer(modifier = Modifier.height(12.dp))
-                                LastFmTrackSyncCard(
-                                    song,
-                                    value,
-                                    selectedSearchTracks[index] ?: 0
-                                ) {
-                                    welcomeViewmodel.setSelectedSearchTrack(index, it)
-                                }
-                            }
+//                            val key = searchTrackResult.keys.toList()[index]
+//                            val value = searchTrackResult[key]
+//                            val song = rawSongList[key]
+//                            if (value != null) {
+//                                Spacer(modifier = Modifier.height(12.dp))
+//                                LastFmTrackSyncCard(
+//                                    song,
+//                                    value,
+//                                    selectedSearchTracks[index] ?: 0
+//                                ) {
+//                                    welcomeViewmodel.setSelectedSearchTrack(index, it)
+//                                }
+//                            }
 
                         }
                     }

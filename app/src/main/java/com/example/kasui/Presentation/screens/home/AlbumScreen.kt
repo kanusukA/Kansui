@@ -37,6 +37,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.res.painterResource
@@ -77,6 +78,9 @@ fun AlbumScreen(
     var albumScreenState: AlbumScreenState by remember {
         mutableStateOf(AlbumScreenState.DEFAULT)
     }
+
+    val artwork by album.album.artwork.getBitmap(LocalContext.current)
+        .collectAsStateWithLifecycle(null)
 
 //    val songList = MediaManager.fetchSongsFromAlbum(album)
     val tracks by album.tracks.collectAsStateWithLifecycle(initialValue = emptyList())
@@ -152,17 +156,19 @@ fun AlbumScreen(
             .offset(y = animatedTrackColumnOffset.value)
             .background(color = album.album.artwork.bgColor ?: surfaceColor)
     ) {
+
         AsyncImage(
             modifier = Modifier
                 .padding(top = 64.dp)
                 .size(imageSize)
                 .clip(RoundedCornerShape(20.dp))
                 .align(alignment = Alignment.TopCenter),
-            model = album.album.artwork.bitmap,
+            model = artwork ?: R.drawable.cover,
             contentDescription = null,
             contentScale = ContentScale.Crop,
             clipToBounds = true
         )
+
     }
 
     Box(
@@ -208,7 +214,12 @@ fun AlbumScreen(
                         indication = null,
                         interactionSource = null,
                         onClick = {
-                            Player.setTrackAtHead(tracks[index])
+                            Player.clearQueue()
+//                            Player.setTrackAtHead(tracks[index])
+                            for (idx in index..<tracks.size) {
+                                Player.addTrackToQueue(tracks[idx])
+                            }
+                            Player.prepare()
                         }),
                     text = tracks[index].name,
                     fontFamily = UncutSans,

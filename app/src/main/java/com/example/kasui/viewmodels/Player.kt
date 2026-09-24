@@ -151,6 +151,22 @@ object Player {
             .build()
     }
 
+    fun clearQueue() {
+        _exoPlayer.value?.clearMediaItems()
+    }
+
+    fun onNext() {
+        if (_exoPlayer.value?.hasNextMediaItem() ?: false) {
+            _exoPlayer.value?.seekToNextMediaItem()
+        }
+    }
+
+    fun onPrevious() {
+        if (_exoPlayer.value?.hasPreviousMediaItem() ?: false) {
+            _exoPlayer.value?.seekToPreviousMediaItem()
+        }
+    }
+
 //    private fun setMediaItem(track: Track) {
 //        clearQueue()
 ////        _trackQueue.update { listOf(trackToMediaItem(track)) }

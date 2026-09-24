@@ -40,6 +40,7 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -47,6 +48,7 @@ import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.Bitmap
 import coil3.compose.AsyncImage
 import coil3.toCoilUri
@@ -77,6 +79,9 @@ fun AlbumCard(
 
     val animatedSelectionColor =
         animateColorAsState(if (selected) TitleColor.copy(alpha = 0.35f) else Color.Transparent)
+
+    val art = artwork?.getBitmap(LocalContext.current)
+        ?.collectAsStateWithLifecycle(null)?.value
 
     Box(
         modifier = Modifier
@@ -114,7 +119,7 @@ fun AlbumCard(
         ) {
             AsyncImage(
                 modifier = Modifier.size(170.dp),
-                model = artwork?.bitmap ?: R.drawable.cover,
+                model = art ?: R.drawable.cover,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 clipToBounds = true,

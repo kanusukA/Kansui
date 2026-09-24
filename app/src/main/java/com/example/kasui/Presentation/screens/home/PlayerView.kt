@@ -41,20 +41,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.layout.onGloballyPositioned
+import androidx.compose.ui.layout.positionInParent
+import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
@@ -74,6 +80,7 @@ import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
+import com.example.kasui.ui.customs.ssspring
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.surfaceHighColor
 import com.example.kasui.ui.variantColor
@@ -82,6 +89,7 @@ import com.example.kasui.viewmodels.Player
 import com.example.kasui.viewmodels.PlayerListener
 import com.example.kasui.viewmodels.PlayerStates
 import com.example.kasui.viewmodels.PlayerViewModel
+import kotlin.math.abs
 
 @Composable
 fun PlayerView(
@@ -101,6 +109,21 @@ fun PlayerView(
 
     val artwork = currentAlbum?.album?.artwork?.getBitmap(LocalContext.current)
         ?.collectAsStateWithLifecycle(null)?.value
+
+    var nextVisibility by remember {
+        mutableFloatStateOf(0f)
+    }
+    var previousVisibility by remember {
+        mutableFloatStateOf(0f)
+    }
+    var trigger by remember {
+        mutableFloatStateOf(0f)
+    }
+    LaunchedEffect(trigger) {
+        nextVisibility = trigger
+        previousVisibility = -trigger
+
+    }
 
     Box(
         modifier = modifier
@@ -153,6 +176,32 @@ fun PlayerView(
             color = TitleColor,
             waveSpeed = 12.dp
         )
+
+        Text(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 60.dp)
+                .alpha(nextVisibility),
+            text = "Next",
+            fontFamily = ViaodaLibre,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = TitleColor
+        )
+
+        Text(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(start = 180.dp)
+                .alpha(previousVisibility),
+            text = "Previous",
+            fontFamily = ViaodaLibre,
+            fontSize = 28.sp,
+            fontWeight = FontWeight.ExtraBold,
+            color = TitleColor
+        )
+
+
         Row(
             modifier = Modifier
                 .fillMaxHeight()
@@ -171,7 +220,15 @@ fun PlayerView(
 
 //            Spacer(modifier = Modifier.width(6.dp))
 
-            Box(modifier = Modifier.fillMaxHeight()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight()
+                    .ssspring(
+                        trigger = { trigger = it },
+                        triggerThreshold = 50.dp
+                    )
+
+            ) {
                 Text(
                     currentTrack?.name ?: "",
                     fontFamily = ViaodaLibre,

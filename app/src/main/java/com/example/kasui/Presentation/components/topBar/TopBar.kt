@@ -92,12 +92,6 @@ fun TopBar(
         mutableStateOf("")
     }
 
-//
-//    val subText by remember(selectedAlbum) {
-//        mutableStateOf(
-//            selectedAlbum?.album?.artistName ?: ""
-//        )
-//    }
 
     val selectionMode by remember(topBarSelectionState) {
         mutableStateOf(topBarSelectionState != TopBarSelectionState.NONE)
@@ -127,7 +121,7 @@ fun TopBar(
     }
 
 
-    LaunchedEffect(navState, mediaState, playerFullViewState) {
+    LaunchedEffect(navState, mediaState, playerFullViewState, playingTrack) {
         when (navState) {
             is NavRoutes.Album -> {
                 headingText = selectedAlbum?.album?.albumName ?: ""

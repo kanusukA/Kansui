@@ -80,6 +80,7 @@ import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
+import com.example.kasui.ui.customs.Trigger
 import com.example.kasui.ui.customs.ssspring
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.surfaceHighColor
@@ -225,6 +226,12 @@ fun PlayerView(
                     .fillMaxHeight()
                     .ssspring(
                         trigger = { trigger = it },
+                        onTrigger = {
+                            when (it) {
+                                Trigger.LEFT -> Player.onPrevious()
+                                Trigger.RIGHT -> Player.onNext()
+                            }
+                        },
                         triggerThreshold = 50.dp
                     )
 

@@ -75,6 +75,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavController
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.NavState
@@ -107,6 +108,7 @@ import kotlin.time.Duration.Companion.milliseconds
 @Composable
 fun BottomBar(
     welcomeViewmodel: WelcomeViewmodel,
+    navController: NavController,
     modifier: Modifier = Modifier
 ) {
 
@@ -327,7 +329,10 @@ fun BottomBar(
                 onHold = onHold,
                 dragPositionY = dragPositionY,
                 onClick = {
-                    bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true))
+                    NavManager.goBack(
+                        navController.previousBackStackEntry?.destination?.route
+                            ?: NavRoutes.Home().route
+                    )
                 })
         }
     }
@@ -547,6 +552,7 @@ private fun BottomBarTab(
 
 
 }
+
 
 @Preview
 @Composable

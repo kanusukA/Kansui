@@ -89,9 +89,10 @@ fun NavScreen(
     }
 
     LaunchedEffect(navState) {
-        println("navChange ${navState.popBack}")
+        println("navChange ${navState.popBack} : ${navState.navRoute}")
         if (navState.popBack) {
             navController.popBackStack()
+
         } else {
             when (navState) {
                 is Album -> navController.navigate(Album().route)
@@ -221,11 +222,16 @@ fun NavScreen(
                 composable(route = PlayerView().route) {
                     BackHandler(enabled = true) {
                         println("POP back")
+                        println("Entries : ")
+
                         if (playerFullViewState == PlayerFullViewState.QUEUE || playerFullViewState == PlayerFullViewState.LYRICS) {
                             NavManager.changePlayerViewState(PlayerFullViewState.PLAYING)
                         } else {
                             when (navState) {
-                                else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
+                                else -> NavManager.goBack(
+                                    navController.previousBackStackEntry?.destination?.route
+                                        ?: NavRoutes.Home().route
+                                )
                             }
                         }
 

@@ -33,9 +33,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     // VIEW MODELS
     var homeViewModel: HomeViewModel
-//    var playerViewModel: PlayerViewModel
-//    var topBarViewModel: TopBarViewModel
-
 
     val username: StateFlow<String> = LastFmManager.username.stateIn(
         scope = viewModelScope,
@@ -52,32 +49,16 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         val albumDao = AlbumDatabase.getInstance(application.applicationContext).getAlbumDao()
         val albumRepo = AlbumRepository(albumDao)
 
-        dbAlbums = albumRepo.albums
-//            .map {
-//            it
-////            it.map { album ->
-////                if (album.album.artwork.bitmap == null && album.album.artwork.uri != null) {
-////                    album.album.artwork.bitmap = MediaManager.fetchArtworkFromTrackUri(
-////                        application.applicationContext,
-////                        album.album.artwork.uri!!
-////                    )
-////                }
-////                album
-////            }
-//        }
-            .stateIn(
-                viewModelScope,
-                started = SharingStarted.Eagerly,
-                initialValue = emptyList()
-            )
+        dbAlbums = albumRepo.albums.stateIn(
+            viewModelScope,
+            started = SharingStarted.Eagerly,
+            initialValue = emptyList()
+        )
 
         dbTracks = albumRepo.getAllTracks()
             .stateIn(viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList())
 
         homeViewModel = HomeViewModel(albumRepo, this)
-//        playerViewModel = PlayerViewModel(this)
-//        topBarViewModel = TopBarViewModel(playerViewModel)
-
 
     }
 
@@ -85,16 +66,17 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         Player.initPlayer(context)
         MediaManager.initRepo(context)
 
-//        viewModelScope.launch(Dispatchers.IO) {
-//            LastFmManager.loadSessionKey(application.applicationContext)
-//        }
-
-        viewModelScope.launch(Dispatchers.IO) {
-            MediaManager.fetchMusicFiles(application.applicationContext)
-        }
+        syncMusicFiles()
     }
 
-    // CREATE AND MANAGE VIEWMODEL BY YOURSELF!!!!!
+    fun syncMusicFiles() {
+        viewModelScope.launch {
+            MediaManager.fetchMusicFiles(application.applicationContext)
+            MediaManager.saveAlbums(
+                MediaManager.insertAlbums.value
+            )
+        }
+    }
 
     fun loginLastFm(username: String, password: String) {
 

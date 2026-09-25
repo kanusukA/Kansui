@@ -17,43 +17,48 @@ enum class NavState {
 }
 
 sealed class NavRoutes(
-    val popBack: Boolean = false,
+    var popBack: Boolean = false,
     val navRoute: String,
     val welcomeSubRoutes: WelcomeSubRoutes = WelcomeSubRoutes.NONE
 ) {
-    data class Home(val route: String = "Home", val popBackStack: Boolean = false) :
+
+    companion object {
+        val all = listOf(Home(), Search(), Library(), Album(), PlayerView())
+    }
+
+    data class Home(val route: String = "Home", var popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
 
-    data class Search(val route: String = "Search", val popBackStack: Boolean = false) :
+    data class Search(val route: String = "Search", var popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
 
-    data class Library(val route: String = "Library", val popBackStack: Boolean = false) :
+    data class Library(val route: String = "Library", var popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
 
-    data class Album(val route: String = "Album", val popBackStack: Boolean = false) :
+    data class Album(val route: String = "Album", var popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
 
-    data class PlayerView(val route: String = "Player", val popBackStack: Boolean = false) :
+    data class PlayerView(val route: String = "Player", var popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
 
     data class WelcomeLogin(
         val route: String = "Welcome",
         val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.LOGIN,
-        val popBackStack: Boolean = false,
+        var popBackStack: Boolean = false,
     ) :
         NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
 
     data class WelcomeSetupAlbum(
         val route: String = "Welcome",
         val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.SETUP,
-        val popBackStack: Boolean = false,
+        var popBackStack: Boolean = false,
     ) :
         NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
 
     data class WelcomeSearchAlbum(
         val route: String = "Welcome",
         val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.SEARCH,
-        val popBackStack: Boolean = false,
+        var popBackStack: Boolean = false,
     ) :
         NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
 }
@@ -83,6 +88,15 @@ object NavManager {
             throw Exception("ALBUM VIEW SELECTED WITHOUT A ALBUM TO SHOW!")
         }
         _navStates.update { state }
+    }
+
+    fun goBack(previousRoute: String) {
+        NavRoutes.all.forEach {
+            if (it.navRoute == previousRoute) {
+                changeNavState(it.apply { popBack = true })
+                return@forEach
+            }
+        }
     }
 
     fun navToAlbumView(album: Album) {

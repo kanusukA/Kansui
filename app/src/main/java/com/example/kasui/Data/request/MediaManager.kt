@@ -48,31 +48,15 @@ object MediaManager {
 
     private var albumRepository: AlbumRepository? = null
 
-    private val coroutineScope = CoroutineScope(Dispatchers.Main)
-
 
     fun initRepo(context: Context) {
-        coroutineScope.launch {
-            val albumDb = AlbumDatabase.getInstance(context)
-            albumRepository = AlbumRepository(albumDb.getAlbumDao())
-//            fetchMusicFiles(context)
-        }
+        val albumDb = AlbumDatabase.getInstance(context)
+        albumRepository = AlbumRepository(albumDb.getAlbumDao())
 
     }
 
-
-//    private var _rawSongList = MutableStateFlow(listOf<Song>())
-//    val rawSongList: StateFlow<List<Song>> = _rawSongList
-
-//    private var _rawAlbumList = MutableStateFlow(listOf<Album>())
-//    val rawAlbumList: StateFlow<List<Album>> = _rawAlbumList
-
     private var _insertAlbums = MutableStateFlow(listOf<InsertAlbum>())
-
-
-    // key is the index of _rawSongList
-//    private var _searchAlbumList = MutableStateFlow(mapOf<Int, List<Album>>())
-//    val searchAlbumList = _searchAlbumList.asStateFlow()
+    val insertAlbums = _insertAlbums.asStateFlow()
 
 
     private var _mediaState: MutableStateFlow<MediaManagerState> = MutableStateFlow(
@@ -81,23 +65,16 @@ object MediaManager {
     val mediaState: StateFlow<MediaManagerState> = _mediaState.asStateFlow()
 
 
-    fun saveAlbumData() {
+    fun saveAlbums(albums: List<InsertAlbum>) {
         if (albumRepository != null) {
-            _insertAlbums.value.forEach {
+            albums.forEach {
                 albumRepository?.addAlbum(it.albumEntity, it.genre, it.tracks)
             }
         }
     }
 
 
-    suspend fun fetchMusicFiles(context: Context) {
-        val tracksLoaded = mutableListOf<Long>()
-        albumRepository?.getAllTracks()?.collect { it ->
-            it.forEach { track ->
-                tracksLoaded.add(track.id)
-            }
-        }
-
+    fun fetchMusicFiles(context: Context) {
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         _mediaState.update { MediaManagerState.LOADING_RAW }
         val projection = arrayOf(
@@ -124,9 +101,9 @@ object MediaManager {
 
         context.contentResolver.query(uri, projection, selection, null, null)?.use { cursor ->
 
-            cursor.columnNames?.forEach {
-                println(it)
-            }
+//            cursor.columnNames?.forEach {
+//                println(it)
+//            }
 
             val _ID_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
             val ALBUM_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
@@ -156,72 +133,9 @@ object MediaManager {
                 val musicUri = ContentUris.withAppendedId(uri, cursor.getLong(_ID_Index))
                 val albumUri = ContentUris.withAppendedId(uri, cursor.getLong(ALBUM_ID_Index))
 
-                if (tracksLoaded.contains(cursor.getLong(_ID_Index))) {
-                    continue
-                }
-//                var bitmap: Bitmap? = null
-//
-//                bitmap = fetchArtworkFromTrackUri(context, musicUri)
-
-//                if (bitmap != null) {
-//                    //println("${bitmap.width} : ${bitmap.height}")
+//                if (tracksLoaded.contains(cursor.getLong(_ID_Index))) {
+//                    continue
 //                }
-
-
-//                val songAttribute = SongAttributes(
-//                    name = cursor.getStringOrNull(TITLE_Index) ?: "Unknow Title",
-//                    durationInMillis = cursor.getIntOrNull(DURATION_Index) ?: 0,
-//                    genreNames = if (cursor.getStringOrNull(GENRE_Index) != null) listOf(
-//                        cursor.getString(
-//                            GENRE_Index
-//                        )
-//                    ) else emptyList(),
-//                    hasLyrics = false,
-//                    uri = musicUri,
-//                    albumName = cursor.getStringOrNull(ALBUM_Index),
-//                    artistName = cursor.getStringOrNull(ARTIST_Index),
-//                    artistUrl = null,
-//                    artwork = Artwork(
-//                        height = 0,
-//                        width = 0,
-//                        url = null,
-//                        uri = null,
-//                        bitmap = null,
-//                        bgColor = null,
-//                        textColor1 = null,
-//                        textColor2 = null,
-//                        textColor3 = null,
-//                        textColor4 = null
-//                    ),
-//                    attribution = null,
-//                    audioVariants = null,
-//                    composerName = null,
-//                    contentRating = null,
-//                    discNumber = cursor.getIntOrNull(DISC_NUMBER_Index),
-//                    editorialNotes = null,
-//                    inFavorites = null,
-//                    releaseDate = cursor.getStringOrNull(DATE_ADDED_Index),
-//                    trackNumber = cursor.getIntOrNull(TRACK_Index),
-//                    url = null
-//                )
-//
-//
-//                val songRelationship = SongRelationships(
-//                    albums = listOf(cursor.getLong(ALBUM_ID_Index)),
-//                    artists = listOf(cursor.getLong(ARTIST_ID_Index)),
-//                    composers = emptyList(),
-//                    genres = emptyList(),
-//                    library = emptyList(),
-//                    station = emptyList()
-//                )
-//
-//                val song = Song(
-//                    id = cursor.getLong(_ID_Index),
-//                    href = musicUri.path ?: "",
-//                    attributes = songAttribute,
-//                    relationships = songRelationship,
-//                )
-
                 val track = Track(
                     id = cursor.getLong(_ID_Index),
                     uri = musicUri,
@@ -233,7 +147,6 @@ object MediaManager {
                     albumId = cursor.getLong(ALBUM_ID_Index)
                 )
 
-//                songList.add(song)
 
                 var index: Int? = null
 
@@ -293,7 +206,6 @@ object MediaManager {
             }
         }
         _insertAlbums.update { insertAlbum }
-        //saveAlbumData()
         _mediaState.update { MediaManagerState.FREE }
 
     }

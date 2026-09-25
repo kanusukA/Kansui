@@ -25,6 +25,7 @@ import kotlin.math.abs
 @Composable
 fun Modifier.ssspring(
     trigger: (Float) -> Unit,
+    onTrigger: (trigger: Trigger) -> Unit,
     triggerThreshold: Dp = 80.dp,
     resistanceFactor: Float = 0.4f,
     springStiffness: Float = Spring.StiffnessHigh
@@ -82,10 +83,12 @@ fun Modifier.ssspring(
                             val currentOffset = offsetX.value
                             val newOffset = currentOffset + (dragAmount * resistanceFactor)
                             offsetX.snapTo(newOffset)
+                            val percent = newOffset / thresholdPx
                             if (!isTriggered) {
-                                trigger(newOffset / thresholdPx)
-                                if (abs(newOffset / thresholdPx) > 0.9) {
+                                trigger(percent)
+                                if (abs(percent) > 0.9) {
                                     haptic.performHapticFeedback(HapticFeedbackType.ToggleOn)
+                                    onTrigger(if (percent > 0) Trigger.RIGHT else Trigger.LEFT)
                                     isTriggered = true
                                 }
 
@@ -100,6 +103,10 @@ fun Modifier.ssspring(
         }
 }
 
+enum class Trigger {
+    LEFT,
+    RIGHT
+}
 
 //fun Modifier.stiffSpringDrag(
 //    onTrigger: () -> Unit,

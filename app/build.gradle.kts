@@ -112,5 +112,6 @@ dependencies {
 
     /// REMOVE IN PROD
     implementation(libs.timber)
+    implementation(kotlin("reflect"))
 
 }

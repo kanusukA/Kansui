@@ -215,7 +215,7 @@ fun AlbumScreen(
                         interactionSource = null,
                         onClick = {
                             Player.clearQueue()
-//                            Player.setTrackAtHead(tracks[index])
+
                             for (idx in index..<tracks.size) {
                                 Player.addTrackToQueue(tracks[idx])
                             }

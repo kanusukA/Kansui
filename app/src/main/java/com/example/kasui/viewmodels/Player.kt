@@ -32,7 +32,7 @@ object PlayerListener : Player.Listener {
 
     private var _trackQueue = MutableStateFlow<List<MediaItem>>(emptyList())
     val trackQueue = _trackQueue.asStateFlow()
-
+    
 
     override fun onPlayerError(error: PlaybackException) {
         super.onPlayerError(error)
@@ -155,6 +155,10 @@ object Player {
         _exoPlayer.value?.clearMediaItems()
     }
 
+    fun seekToMediaItem(index: Int) {
+        _exoPlayer.value?.seekTo(index, 0)
+    }
+
     fun onNext() {
         if (_exoPlayer.value?.hasNextMediaItem() ?: false) {
             _exoPlayer.value?.seekToNextMediaItem()
@@ -165,6 +169,39 @@ object Player {
         if (_exoPlayer.value?.hasPreviousMediaItem() ?: false) {
             _exoPlayer.value?.seekToPreviousMediaItem()
         }
+    }
+
+    fun getSeekProgressToProgressText(progress: Float): String {
+        val duration = (exoPlayer.value?.contentDuration ?: 1)
+        val seekPosition = duration * progress
+        val sec = ((duration - seekPosition) / 1000 -
+                (((duration - seekPosition) / 60000).toInt() * 60)).toInt().coerceIn(
+            0,
+            60
+        )
+        return if (sec < 10) {
+            "${
+                ((duration - seekPosition) / 60000).toInt().coerceIn(
+                    0,
+                    999
+                )
+            }:" + "0${sec}"
+        } else {
+            "${
+                ((duration - seekPosition) / 60000).toInt().coerceIn(
+                    0,
+                    999
+                )
+            }:" + "$sec"
+        }
+    }
+
+    fun seekToProgress(progress: Float) {
+        _exoPlayer.value?.seekTo((((_exoPlayer.value?.contentDuration ?: 0L) * progress).toLong()))
+    }
+
+    fun removeTrackAt(index: Int) {
+        _exoPlayer.value?.removeMediaItem(index)
     }
 
 //    private fun setMediaItem(track: Track) {

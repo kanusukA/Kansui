@@ -15,6 +15,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -58,6 +59,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionInRoot
@@ -81,7 +83,10 @@ import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
 import com.example.kasui.ui.customs.Trigger
+import com.example.kasui.ui.customs.seeker
+import com.example.kasui.ui.customs.slider
 import com.example.kasui.ui.customs.ssspring
+import com.example.kasui.ui.interlope
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.surfaceHighColor
 import com.example.kasui.ui.variantColor
@@ -125,6 +130,7 @@ fun PlayerView(
         previousVisibility = -trigger
 
     }
+
 
     Box(
         modifier = modifier
@@ -307,7 +313,9 @@ fun PlayerFullView(
 ) {
 
     val playerState by PlayerListener.playerState.collectAsStateWithLifecycle()
+
     val trackQueue by playerViewModel.trackQueue.collectAsStateWithLifecycle()
+
     val currentAlbum by playerViewModel.currentAlbum.collectAsStateWithLifecycle()
     val currentTrack by playerViewModel.currentTrack.collectAsStateWithLifecycle()
 
@@ -315,10 +323,22 @@ fun PlayerFullView(
 
     val player by Player.exoPlayer.collectAsStateWithLifecycle()
 
+    // PROGRESS AND SEEK
     val progress by Player.progress.collectAsStateWithLifecycle(0f)
     val progressText by Player.ProgressText.collectAsStateWithLifecycle("")
+    var seeking by remember {
+        mutableStateOf(false)
+    }
+    var seekProgress by remember {
+        mutableFloatStateOf(0f)
+    }
+    var seekProgressText by remember {
+        mutableStateOf("0:00")
+    }
 
-    val animatedProgress = animateFloatAsState(progress, animationSpec = tween(400))
+
+    val animatedProgress =
+        animateFloatAsState(if (seeking) seekProgress else progress, animationSpec = tween(400))
 
     val adaptiveTextSizeChange by remember(playerFullViewState) {
         mutableIntStateOf(
@@ -376,21 +396,22 @@ fun PlayerFullView(
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(600.dp + (animAdaptiveTextSizeChange.value * 5).dp)
+                    .height(560.dp + (animAdaptiveTextSizeChange.value * 5).dp)
             ) {
 
                 Column(modifier = Modifier.fillMaxWidth()) {
-                    CloseIcon(
-                        modifier = Modifier
-                            .align(Alignment.End)
-                            .padding(end = 24.dp, bottom = 8.dp)
-                            .clickable(onClick = { NavManager.changeNavState(NavRoutes.Home()) }),
-                        48
-                    )
+//                    CloseIcon(
+//                        modifier = Modifier
+//                            .align(Alignment.End)
+//                            .padding(end = 24.dp, bottom = 8.dp)
+//                            .clickable(onClick = { NavManager.changeNavState(NavRoutes.Home()) }),
+//                        48
+//                    )
 
                     AsyncImage(
                         modifier = Modifier
                             .align(Alignment.CenterHorizontally)
+                            .padding(top = 32.dp)
                             .size(360.dp)
                             .clip(RoundedCornerShape(24.dp)),
                         model = artwork ?: R.drawable.cover,
@@ -400,10 +421,8 @@ fun PlayerFullView(
                             blendMode = BlendMode.SrcAtop
                         )
                     )
-
-//                    Spacer(modifier = Modifier.height(140.dp + (animAdaptiveTextSizeChange.value * 5).dp))
                 }
-
+                // QUEUE
                 androidx.compose.animation.AnimatedVisibility(
                     modifier = Modifier.align(Alignment.Center),
                     visible = playerFullViewState == PlayerFullViewState.QUEUE,
@@ -418,12 +437,31 @@ fun PlayerFullView(
                     ) {
                         item { Spacer(modifier = Modifier.height(120.dp)) }
 
-                        items(trackQueue.size) { trackIndex ->
+                        items(
+                            trackQueue.size,
+                            key = { return@items trackQueue[it].id }) { trackIndex ->
                             Spacer(modifier = Modifier.height(12.dp))
+
                             if (currentTrackIndex == trackIndex) {
                                 Text(
                                     modifier = Modifier
-                                        .padding(end = 12.dp),
+                                        .padding(end = 12.dp)
+                                        .slider(
+                                            onSlide = {},
+                                            onEnd = {
+                                                if (it) {
+                                                    Player.removeTrackAt(trackIndex)
+                                                }
+                                            },
+                                            threshold = 500f,
+                                            color = TitleColor
+                                        )
+                                        .clickable(
+                                            indication = null,
+                                            interactionSource = null,
+                                            onClick = {
+                                                Player.seekToMediaItem(trackIndex)
+                                            }),
                                     text = trackQueue[trackIndex].name,
                                     fontSize = 28.sp,
                                     fontFamily = ViaodaLibre,
@@ -433,7 +471,26 @@ fun PlayerFullView(
                             } else {
                                 Text(
                                     modifier = Modifier
-                                        .padding(end = 12.dp),
+                                        .padding(end = 12.dp)
+                                        .slider(
+                                            onSlide = {},
+                                            onEnd = {
+                                                println("Before : index = $trackIndex")
+                                                trackQueue.forEach { println(" ${it.name}") }
+                                                if (it) {
+                                                    Player.removeTrackAt(trackIndex)
+                                                }
+
+                                            },
+                                            threshold = 500f,
+                                            color = variantColor
+                                        )
+                                        .clickable(
+                                            indication = null,
+                                            interactionSource = null,
+                                            onClick = {
+                                                Player.seekToMediaItem(trackIndex)
+                                            }),
                                     text = trackQueue[trackIndex].name,
                                     fontSize = 20.sp,
                                     fontFamily = UncutSans,
@@ -441,7 +498,6 @@ fun PlayerFullView(
                                     fontWeight = FontWeight.SemiBold
                                 )
                             }
-
 
                             Spacer(modifier = Modifier.height(12.dp))
                             HorizontalDivider()
@@ -469,12 +525,27 @@ fun PlayerFullView(
             }
 
             // QUEUE
-
-
             LinearWavyProgressIndicator(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .seeker(
+                        progress,
+                        seekOut = {
+                            seekProgress = it
+                            seekProgressText = Player.getSeekProgressToProgressText(it)
+                        },
+                        onStart = {
+                            seekProgress = progress
+                            seekProgressText = progressText
+                            seeking = true
+                        },
+                        onEnd = {
+                            Player.seekToProgress(seekProgress)
+                            seeking = false
+                        }
+                    ),
                 progress = {
-                    animatedProgress.value
+                    if (seeking) seekProgress else animatedProgress.value
                 },
                 amplitude = { 0.8f },
                 trackColor = surfaceHighColor,
@@ -487,7 +558,7 @@ fun PlayerFullView(
                 modifier = Modifier
                     .align(Alignment.End)
                     .padding(end = 12.dp),
-                text = progressText,
+                text = if (seeking) seekProgressText else progressText,
                 fontSize = 18.sp,
                 fontFamily = UncutSans,
                 color = variantHighColor,

@@ -143,6 +143,8 @@ fun BottomBar(
                     true
                 }
 
+                is NavRoutes.PlayerView -> true
+
                 else -> false
             }
         )
@@ -255,16 +257,12 @@ fun BottomBar(
         }
     }
 
-//    Row(
-//
-//    ) {
-//        HomeScreenTabs()
-//    }
+    val animBackSpacing = animateDpAsState(if (showBackTab) 100.dp else 0.dp)
 
-    Krow(
+    Box(
         modifier = modifier
             .requiredHeight(56.dp)
-//            .clip(shape = CircleShape)
+            .fillMaxWidth()
             .background(
                 surfaceHighColor.copy(alpha = 0.85f), shape = RoundedCornerShape(
                     topStart = animatedBoxRounding.value,
@@ -273,53 +271,24 @@ fun BottomBar(
                     bottomEnd = 36.dp
                 )
             )
-            .pointerInput(Unit) {
-
-                detectDragGesturesAfterLongPress(
-                    onDragStart = {
-                        onHold = true
-                    },
-                    onDrag = { change, dragAmount ->
-
-                        dragPositionY = change.position.x
-                    },
-                    onDragEnd = { onHold = false },
-                    onDragCancel = { onHold = false }
-                )
-
-            },
-        hiddenComposable = {
-
-//            if (navState.navRoute == NavRoutes.Album().route) {
-//                BottomBarTab(
-//                    modifier = Modifier,
-//                    R.drawable.arrow_back, "Back", true,
-//                    onHold = onHold,
-//                    dragPositionY,
-//                    onClick = {
-//                        bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true))
-//                    })
-//            }
-        },
-        visible = showBackTab,
-        space = 2.dp,
-        exitTransition = slideOutHorizontally(
-            targetOffsetX = { it },
-            animationSpec = tween(durationMillis = 2000)
-        )
-
     ) {
-//        Spacer(modifier = Modifier.width(48.dp))
-        when (navState.navRoute) {
-
-            NavRoutes.WelcomeLogin().route -> WelcomeScreenTabs()
-            else -> HomeScreenTabs()
+        Row() {
+            Row(
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                HomeScreenTabs()
+            }
+            Spacer(modifier = Modifier.width(animBackSpacing.value))
         }
 
         AnimatedVisibility(
-            showBackTab,
-            enter = scaleIn() + slideInHorizontally(
-                initialOffsetX = { it }),
+            modifier = Modifier.align(Alignment.CenterEnd),
+            visible = showBackTab,
+            enter = scaleIn() + slideInHorizontally(initialOffsetX = { it }),
             exit = scaleOut() + slideOutHorizontally(targetOffsetX = { it })
         ) {
             BottomBarTab(
@@ -336,6 +305,88 @@ fun BottomBar(
                 })
         }
     }
+
+//    Row(
+//
+//    ) {
+//        HomeScreenTabs()
+//    }
+
+    /* Krow(
+         modifier = modifier
+             .requiredHeight(56.dp)
+ //            .clip(shape = CircleShape)
+             .background(
+                 surfaceHighColor.copy(alpha = 0.85f), shape = RoundedCornerShape(
+                     topStart = animatedBoxRounding.value,
+                     bottomStart = 36.dp,
+                     topEnd = animatedBoxRounding.value,
+                     bottomEnd = 36.dp
+                 )
+             )
+             .pointerInput(Unit) {
+
+                 detectDragGesturesAfterLongPress(
+                     onDragStart = {
+                         onHold = true
+                     },
+                     onDrag = { change, dragAmount ->
+
+                         dragPositionY = change.position.x
+                     },
+                     onDragEnd = { onHold = false },
+                     onDragCancel = { onHold = false }
+                 )
+
+             },
+         hiddenComposable = {
+
+ //            if (navState.navRoute == NavRoutes.Album().route) {
+ //                BottomBarTab(
+ //                    modifier = Modifier,
+ //                    R.drawable.arrow_back, "Back", true,
+ //                    onHold = onHold,
+ //                    dragPositionY,
+ //                    onClick = {
+ //                        bottomBarViewModel.onChangeNavState(NavRoutes.Home(popBackStack = true))
+ //                    })
+ //            }
+         },
+         visible = showBackTab,
+         space = 2.dp,
+         exitTransition = slideOutHorizontally(
+             targetOffsetX = { it },
+             animationSpec = tween(durationMillis = 2000)
+         )
+
+     ) {
+ //        Spacer(modifier = Modifier.width(48.dp))
+         when (navState.navRoute) {
+
+             NavRoutes.WelcomeLogin().route -> WelcomeScreenTabs()
+             else -> HomeScreenTabs()
+         }
+
+         AnimatedVisibility(
+             showBackTab,
+             enter = scaleIn() + slideInHorizontally(
+                 initialOffsetX = { it }),
+             exit = scaleOut() + slideOutHorizontally(targetOffsetX = { it })
+         ) {
+             BottomBarTab(
+                 icon = R.drawable.arrow_back,
+                 title = "Back",
+                 selected = true,
+                 onHold = onHold,
+                 dragPositionY = dragPositionY,
+                 onClick = {
+                     NavManager.goBack(
+                         navController.previousBackStackEntry?.destination?.route
+                             ?: NavRoutes.Home().route
+                     )
+                 })
+         }
+     }*/
 
 }
 

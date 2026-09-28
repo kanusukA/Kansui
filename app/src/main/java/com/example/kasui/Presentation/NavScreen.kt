@@ -258,6 +258,7 @@ fun NavScreen(
 
             BottomBar(
                 welcomeViewmodel = welcomeViewmodel,
+                navController = navController,
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 24.dp, vertical = 16.dp)

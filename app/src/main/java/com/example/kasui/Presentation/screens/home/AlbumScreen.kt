@@ -55,6 +55,7 @@ import com.example.kasui.Data.structure.song.Song
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.components.songCard.SongCard
 import com.example.kasui.R
+import com.example.kasui.TagLib
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
@@ -84,6 +85,23 @@ fun AlbumScreen(
 
 //    val songList = MediaManager.fetchSongsFromAlbum(album)
     val tracks by album.tracks.collectAsStateWithLifecycle(initialValue = emptyList())
+
+    val context = LocalContext.current
+    LaunchedEffect(tracks) {
+
+        val pfds = tracks.map {
+            println("Track - ${it.name}")
+            context.contentResolver.openFileDescriptor(it.uri, "r")
+        }
+        val array = pfds.map {
+            it?.detachFd() ?: 0
+        }.toIntArray()
+        println(TagLib.stringFromJNI(array))
+        
+        pfds.forEach {
+            it?.close()
+        }
+    }
 
     val isScrolledPastFirstItem by remember {
         derivedStateOf { lazyState.firstVisibleItemIndex > 0 }

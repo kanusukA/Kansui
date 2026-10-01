@@ -19,6 +19,7 @@ import com.example.kasui.Data.structure.song.Track
 //import com.example.kasui.Data.structure.MusicBrainz.Media
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
+import com.example.kasui.TagLib
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
@@ -55,8 +56,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             initialValue = emptyList()
         )
 
+
+
         dbTracks = albumRepo.getAllTracks()
             .stateIn(viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList())
+
+
 
         homeViewModel = HomeViewModel(albumRepo, this)
 

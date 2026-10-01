@@ -122,25 +122,27 @@ class MainActivity : AppCompatActivity() {
         }
 
 
-//        binding = ActivityMainBinding.inflate(layoutInflater)
-//        setContentView(binding.root)
-//
-//        // Example of a call to a native method
-//        binding.sampleText.text = stringFromJNI()
-
-
     }
 
     /**
      * A native method that is implemented by the 'kasui' native library,
      * which is packaged with this application.
      */
-    external fun stringFromJNI(): String
+//    external fun stringFromJNI(): String
+//
+//    companion object {
+//        // Used to load the 'kasui' library on application startup.
+//        init {
+//            System.loadLibrary("kasui")
+//        }
+//    }
+}
 
-    companion object {
-        // Used to load the 'kasui' library on application startup.
-        init {
-            System.loadLibrary("kasui")
-        }
+object TagLib {
+
+    external fun stringFromJNI(fd: IntArray): String
+
+    init {
+        System.loadLibrary("kasui")
     }
 }

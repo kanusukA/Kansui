@@ -29,6 +29,7 @@ import com.example.kasui.Data.structure.song.Song
 import com.example.kasui.Data.structure.song.SongAttributes
 import com.example.kasui.Data.structure.song.SongRelationships
 import com.example.kasui.Data.structure.song.Track
+import com.example.kasui.TagLib
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
@@ -40,6 +41,7 @@ import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -73,8 +75,81 @@ object MediaManager {
         }
     }
 
+    fun saveTracks(tracks: List<Track>) {
+        if (albumRepository != null) {
+            albumRepository?.addTracks(tracks)
+        }
+    }
 
-    fun fetchMusicFiles(context: Context) {
+    fun loadTags(context: Context, tracks: List<Track>, force: Boolean = false): List<Track> {
+        var startTime = System.currentTimeMillis()
+        println("tags loading ${tracks.size} ${System.currentTimeMillis() - startTime}")
+        val listOfIds = mutableListOf<Long>();
+
+        startTime = System.currentTimeMillis()
+
+        val pfds = tracks.mapNotNull {
+            if (it.isTagLoaded || it.fileType != FILETYPES.FLAC) {
+                null
+            } else {
+                val fd = context.contentResolver.openFileDescriptor(it.uri, "r")
+                if (fd != null) {
+                    listOfIds.add(it.id)
+                }
+                fd
+            }
+        }
+        val fds = pfds.map { it.detachFd() }.toIntArray()
+
+        println("loaded fds - ${fds.size} in ${System.currentTimeMillis() - startTime}")
+
+        if (fds.isEmpty()) {
+            return emptyList()
+        }
+
+        startTime = System.currentTimeMillis()
+
+        val tags: List<Map<String, String>> = TagLib.stringFromJNI(fds, listOfIds.toLongArray())
+
+        println("parsed tags ${tags.size} in ${System.currentTimeMillis() - startTime}")
+        startTime = System.currentTimeMillis()
+
+        val tagged = tags.mapNotNull { tagTrack ->
+            val track = tracks.find { it.id.toString() == tagTrack["id"] }
+            if (track != null) {
+                track.discNumber = tagTrack["DISCNUMBER"]?.toIntOrNull()
+                track.trackNumber = tagTrack["TRACKNUMBER"]?.toIntOrNull()
+                track.lyrics =
+                    tagTrack["LYRICS"] ?: tagTrack["SYNCEDLYRICS"] ?: tagTrack["UNSYNCEDLYRICS"]
+                track.releaseDate = tagTrack["DATE"]
+                track.publisher = tagTrack["PUBLISHER"] ?: tagTrack["LABEL"]
+                track.comment = tagTrack["COMMENT"]
+                if (track.lyrics != null && (track.lyrics?.isNotEmpty() ?: false)) {
+                    track.hasLyrics = true
+                }
+                track.isTagLoaded = true;
+
+            }
+            track
+        }
+        Timber.d("tagged ${tagged.size} in ${System.currentTimeMillis() - startTime}")
+        Timber.d(tagged.toString())
+
+        pfds.forEach {
+            it.close()
+        }
+
+        println("tags loaded")
+
+        return tagged
+
+    }
+
+
+    suspend fun fetchMusicFiles(context: Context) {
+        val tracks = albumRepository!!.getAllTracksNow()
+
+
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         _mediaState.update { MediaManagerState.LOADING_RAW }
         val projection = arrayOf(
@@ -94,16 +169,13 @@ object MediaManager {
             MediaStore.Audio.Media.SAMPLERATE,
             MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.TRACK,
+            MediaStore.Audio.Media.MIME_TYPE
         )
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
 
         val insertAlbum = mutableListOf<InsertAlbum>()
 
         context.contentResolver.query(uri, projection, selection, null, null)?.use { cursor ->
-
-//            cursor.columnNames?.forEach {
-//                println(it)
-//            }
 
             val _ID_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
             val ALBUM_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
@@ -123,6 +195,7 @@ object MediaManager {
             val SAMPLERATE_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SAMPLERATE)
             val TITLE_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
             val TRACK_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
+            val MIME_TYPE_INDEX = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
 
             if (cursor.isLast) {
                 println("No Music file found")
@@ -132,10 +205,21 @@ object MediaManager {
             while (cursor.moveToNext()) {
                 val musicUri = ContentUris.withAppendedId(uri, cursor.getLong(_ID_Index))
                 val albumUri = ContentUris.withAppendedId(uri, cursor.getLong(ALBUM_ID_Index))
+                val mime_type = cursor.getStringOrNull(MIME_TYPE_INDEX)
 
-//                if (tracksLoaded.contains(cursor.getLong(_ID_Index))) {
-//                    continue
-//                }
+                val musicId = cursor.getLong(_ID_Index)
+                if (tracks.find { it.id == musicId } != null) {
+                    println("SKIPPING TRACK LOADING - ID : $musicId")
+                    continue
+                }
+
+                val filetype = if (mime_type == "audio/mpeg" || mime_type == "audio/mp3") {
+                    FILETYPES.MP3
+                } else if (mime_type == "audio/flac" || mime_type == "audio/x-flac") {
+                    FILETYPES.FLAC
+                } else {
+                    FILETYPES.OTHER
+                }
                 val track = Track(
                     id = cursor.getLong(_ID_Index),
                     uri = musicUri,
@@ -144,7 +228,8 @@ object MediaManager {
                     name = cursor.getStringOrNull(TITLE_Index) ?: "Unknow Title",
                     durationInMillis = cursor.getIntOrNull(DURATION_Index) ?: 0,
                     hasLyrics = false,
-                    albumId = cursor.getLong(ALBUM_ID_Index)
+                    albumId = cursor.getLong(ALBUM_ID_Index),
+                    fileType = filetype
                 )
 
 
@@ -311,6 +396,13 @@ object MediaManager {
     }
 
 }
+
+enum class FILETYPES {
+    MP3,
+    FLAC,
+    OTHER
+}
+
 
 enum class MediaManagerState {
     LOADING_RAW,

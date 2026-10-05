@@ -32,6 +32,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
     val lastfmState = LastFmManager.lastFmState
 
+    var tagged: Boolean = false
+
     // VIEW MODELS
     var homeViewModel: HomeViewModel
 
@@ -55,8 +57,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             started = SharingStarted.Eagerly,
             initialValue = emptyList()
         )
-
-
 
         dbTracks = albumRepo.getAllTracks()
             .stateIn(viewModelScope, started = SharingStarted.Eagerly, initialValue = emptyList())

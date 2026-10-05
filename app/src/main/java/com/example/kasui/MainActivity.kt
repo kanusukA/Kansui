@@ -10,16 +10,22 @@ import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresExtension
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kasui.Data.MusicBrainZ.musicBrainz
+import com.example.kasui.Data.request.MediaManager
 import com.example.kasui.Presentation.NavScreen
 import com.example.kasui.Presentation.screens.home.WelcomeScreen
 import com.example.kasui.databinding.ActivityMainBinding
 import com.example.kasui.viewmodels.MainViewModel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
@@ -66,9 +72,6 @@ class MainActivity : AppCompatActivity() {
 
         checkAudioPermission()
 
-
-
-
         enableEdgeToEdge()
 
         setContent {
@@ -78,6 +81,21 @@ class MainActivity : AppCompatActivity() {
             LaunchedEffect(Unit) {
                 mainViewModel.initMain(applicationContext)
             }
+
+            val tracks by mainViewModel.dbTracks.collectAsStateWithLifecycle();
+
+            val tagCoroutine = CoroutineScope(Dispatchers.IO)
+
+            LaunchedEffect(tracks) {
+                if (!mainViewModel.tagged && tracks.isNotEmpty()) {
+                    tagCoroutine.launch(Dispatchers.IO) {
+                        val taggedTracks = MediaManager.loadTags(applicationContext, tracks)
+                        MediaManager.saveTracks(taggedTracks)
+                        mainViewModel.tagged = true
+                    }
+                }
+            }
+
 
             val coroutineScope = rememberCoroutineScope()
 
@@ -140,7 +158,7 @@ class MainActivity : AppCompatActivity() {
 
 object TagLib {
 
-    external fun stringFromJNI(fd: IntArray): String
+    external fun stringFromJNI(fd: IntArray, id: LongArray): List<Map<String, String>>
 
     init {
         System.loadLibrary("kasui")

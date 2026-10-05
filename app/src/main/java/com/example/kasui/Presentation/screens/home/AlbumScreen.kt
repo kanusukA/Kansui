@@ -1,5 +1,6 @@
 package com.example.kasui.Presentation.screens.home
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
@@ -7,6 +8,7 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -83,25 +85,8 @@ fun AlbumScreen(
     val artwork by album.album.artwork.getBitmap(LocalContext.current)
         .collectAsStateWithLifecycle(null)
 
-//    val songList = MediaManager.fetchSongsFromAlbum(album)
     val tracks by album.tracks.collectAsStateWithLifecycle(initialValue = emptyList())
 
-    val context = LocalContext.current
-    LaunchedEffect(tracks) {
-
-        val pfds = tracks.map {
-            println("Track - ${it.name}")
-            context.contentResolver.openFileDescriptor(it.uri, "r")
-        }
-        val array = pfds.map {
-            it?.detachFd() ?: 0
-        }.toIntArray()
-        println(TagLib.stringFromJNI(array))
-        
-        pfds.forEach {
-            it?.close()
-        }
-    }
 
     val isScrolledPastFirstItem by remember {
         derivedStateOf { lazyState.firstVisibleItemIndex > 0 }
@@ -187,12 +172,47 @@ fun AlbumScreen(
             clipToBounds = true
         )
 
+        AnimatedVisibility(
+            modifier = Modifier.padding(top = 500.dp),
+            visible = albumScreenState == AlbumScreenState.COVER_VIEW
+        ) {
+            Column() {
+                if (tracks.firstOrNull() != null) {
+                    if (tracks.first().releaseDate != null) {
+                        Text(
+                            text = tracks.first().releaseDate!!,
+                            fontFamily = ViaodaLibre,
+                            color = TitleColor,
+                            fontSize = 22.sp
+                        )
+                    }
+                    if (tracks.first().publisher != null) {
+                        Text(
+                            text = tracks.first().publisher!!,
+                            fontFamily = ViaodaLibre,
+                            color = TitleColor,
+                            fontSize = 22.sp
+                        )
+                    }
+                    if (tracks.first().comment != null) {
+                        Text(
+                            text = tracks.first().comment!!,
+                            fontFamily = ViaodaLibre,
+                            color = TitleColor,
+                            fontSize = 22.sp
+                        )
+                    }
+                }
+            }
+
+        }
+
     }
 
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .offset(y = animatedTrackColumnOffset.value + (animatedTrackColumnOffset.value * 2))
+            .offset(y = animatedTrackColumnOffset.value + (animatedTrackColumnOffset.value * 2.5f))
 
             .nestedScroll(nestedScrollConnection)
     ) {
@@ -212,6 +232,7 @@ fun AlbumScreen(
                     )
                 )
         )
+
 
 
 
@@ -239,7 +260,7 @@ fun AlbumScreen(
                             }
                             Player.prepare()
                         }),
-                    text = tracks[index].name,
+                    text = (tracks[index].trackNumber?.toString() ?: "") + " " + tracks[index].name,
                     fontFamily = UncutSans,
                     fontSize = 20.sp,
                     color = textColor,

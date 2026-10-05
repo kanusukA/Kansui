@@ -44,6 +44,8 @@ add_library(${CMAKE_PROJECT_NAME} SHARED
 target_include_directories(${CMAKE_PROJECT_NAME} PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/taglib"
         "${CMAKE_CURRENT_SOURCE_DIR}/taglib/toolkit"
+        "${CMAKE_CURRENT_SOURCE_DIR}/taglib/flac"
+        "${CMAKE_CURRENT_SOURCE_DIR}/taglib/ogg"
 
 )
 

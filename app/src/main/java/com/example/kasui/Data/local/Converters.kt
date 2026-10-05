@@ -4,6 +4,7 @@ import android.net.Uri
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.room.TypeConverter
+import com.example.kasui.Data.request.FILETYPES
 
 class UriConverter {
     @TypeConverter
@@ -27,4 +28,18 @@ class ColorConverter {
     fun fromColor(color: Color): Int {
         return color.toArgb()
     }
+}
+
+class FileTypeConvertor {
+    
+    @TypeConverter
+    fun toFileType(filetype: Int): FILETYPES {
+        return FILETYPES.entries[filetype]
+    }
+
+    @TypeConverter
+    fun fromFileType(filetype: FILETYPES): Int {
+        return filetype.ordinal
+    }
+
 }

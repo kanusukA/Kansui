@@ -47,6 +47,9 @@ interface AlbumDao {
     @Query("SELECT * FROM tracks")
     fun getAllTracks(): Flow<List<Track>>
 
+    @Query("SELECT * FROM tracks")
+    suspend fun getAllTracksNow(): List<Track>
+
     @Query("SELECT * FROM tracks WHERE id = :id")
     suspend fun getTrack(id: Long): Track?
 
@@ -60,7 +63,7 @@ interface AlbumDao {
             val tracks = getAlbumTracks(it.id).map { trackIds ->
                 trackIds.mapNotNull { trackId ->
                     getTrack(trackId.trackId)
-                }
+                }.sortedBy { it.trackNumber }
             }
             val genres = getAlbumGenres(it.id).map { genreIds ->
                 genreIds.mapNotNull { genreId ->
@@ -122,11 +125,12 @@ interface AlbumDao {
         (Genre::class),
         (AlbumGenreCrossRef::class),
         (Track::class),
-        (AlbumTrackCrossRef::class)],
-    version = 2,
+        (AlbumTrackCrossRef::class)
+    ],
+    version = 4,
     exportSchema = false
 )
-@TypeConverters(UriConverter::class, ColorConverter::class)
+@TypeConverters(UriConverter::class, ColorConverter::class, FileTypeConvertor::class)
 abstract class AlbumDatabase : RoomDatabase() {
 
     abstract fun getAlbumDao(): AlbumDao
@@ -165,6 +169,16 @@ class AlbumRepository(private val albumDao: AlbumDao) {
     fun addAlbum(nAlbum: AlbumEntity, genres: List<Genre>, tracks: List<Track>) {
         coroutineScope.launch(Dispatchers.IO) {
             albumDao.insertAlbum(nAlbum, genres, tracks)
+        }
+    }
+
+    suspend fun getAllTracksNow(): List<Track> {
+        return albumDao.getAllTracksNow();
+    }
+
+    fun addTracks(tracks: List<Track>) {
+        coroutineScope.launch(Dispatchers.IO) {
+            albumDao.insertTracks(tracks)
         }
     }
 

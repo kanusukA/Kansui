@@ -3,6 +3,7 @@ package com.example.kasui.Data.structure.song
 import android.net.Uri
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.kasui.Data.request.FILETYPES
 import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.Data.structure.EditorialNotes
 import com.example.kasui.Data.structure.Genre
@@ -11,27 +12,34 @@ import com.example.kasui.Data.structure.Genre
 @Entity(tableName = "tracks")
 data class Track(
     @PrimaryKey val id: Long,
-    val albumName: String?,
-    val artistName: String?,
-    val artistUrl: String? = null,
-    val attribution: String? = null, // (Classical music only) The name of the artist or composer to attribute the song with.
+    var albumName: String?,
+    var artistName: String?,
+    var artistUrl: String? = null,
+    var attribution: String? = null, // (Classical music only) The name of the artist or composer to attribute the song with.
 //    val audioVariants: List<String>?,
     val composerName: String? = null,
     val contentRating: String? = null,
-    val discNumber: Int? = null, // Album Disc number
+    var discNumber: Int? = null, // Album Disc number
 //    val editorialNotes: EditorialNotes?,
     val inFavorites: Boolean? = null,
-    val releaseDate: String? = null,
-    val trackNumber: Int? = null,
+    var releaseDate: String? = null,
+    var trackNumber: Int? = null,
     val url: String? = null,
+    var publisher: String? = null,
+    var comment: String? = null,
+    var lyrics: String? = null,
 
     //Required
-    val name: String,
-    val durationInMillis: Int,
+    var name: String,
+    var durationInMillis: Int,
 //    val genreNames: List<Genre>,
-    val hasLyrics: Boolean,
+    var hasLyrics: Boolean,
     val uri: Uri,
     val albumId: Long,
+
+    var isTagLoaded: Boolean = false,
+
+    var fileType: FILETYPES = FILETYPES.OTHER
 )
 
 class Song(

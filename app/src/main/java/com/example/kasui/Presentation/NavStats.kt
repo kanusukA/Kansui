@@ -83,10 +83,18 @@ object NavManager {
     private var _selectedAlbum: MutableStateFlow<Album?> = MutableStateFlow(null)
     val selectedAlbum = _selectedAlbum.asStateFlow()
 
+    private var _bottomBarVisible = MutableStateFlow(true)
+    val bottomBarVisible = _bottomBarVisible.asStateFlow()
+
     fun changeNavState(state: NavRoutes) {
         if (state == NavRoutes.Album() && selectedAlbum.value == null) {
             throw Exception("ALBUM VIEW SELECTED WITHOUT A ALBUM TO SHOW!")
         }
+//        if (state.navRoute == NavRoutes.PlayerView().route && playerViewState.value == PlayerFullViewState.LYRICS) {
+//            _bottomBarVisible.update { false }
+//        } else {
+//            _bottomBarVisible.update { true }
+//        }
         _navStates.update { state }
     }
 
@@ -142,6 +150,7 @@ object NavManager {
 
     fun changePlayerViewState(state: PlayerFullViewState) {
         _playerViewState.update { state }
+        _bottomBarVisible.update { state != PlayerFullViewState.LYRICS }
     }
 
 //    fun playTrack(track: Track) {

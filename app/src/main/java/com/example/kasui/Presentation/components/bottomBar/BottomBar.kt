@@ -425,7 +425,7 @@ private fun BottomBarTab(
     }
     LaunchedEffect(onDragSelected) {
         if (onDragSelected) {
-            onClick()
+            // onClick()
         }
     }
 
@@ -449,14 +449,15 @@ private fun BottomBarTab(
 
                 })
                 .clip(shape = CircleShape)
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown()
-                        if (down.pressed) {
-                            onClick()
-                        }
-                    }
-                }
+                .clickable(interactionSource = null, indication = null, onClick = onClick)
+//                .pointerInput(Unit) {
+//                    awaitEachGesture {
+//                        val down = awaitFirstDown()
+//                        if (down.pressed) {
+//                            onClick()
+//                        }
+//                    }
+//                }
 
                 .background(color = animatedBGColor.value, shape = CircleShape),
             verticalAlignment = Alignment.CenterVertically,
@@ -530,11 +531,11 @@ private fun BottomBarTab(
             dragPositionY in itemPosWidth.x..itemPosWidth.y
         }
     }
-    LaunchedEffect(onDragSelected) {
-        if (onDragSelected) {
-            onClick()
-        }
-    }
+//    LaunchedEffect(onDragSelected) {
+//        if (onDragSelected) {
+//     //       onClick()
+//        }
+//    }
 
     val animatedDragPosition = animateDpAsState(if (onDragSelected && onHold) 24.dp else 0.dp)
 
@@ -556,14 +557,15 @@ private fun BottomBarTab(
 
                 })
                 .clip(shape = CircleShape)
-                .pointerInput(Unit) {
-                    awaitEachGesture {
-                        val down = awaitFirstDown()
-                        if (down.pressed) {
-                            onClick()
-                        }
-                    }
-                }
+                .clickable(interactionSource = null, indication = null, onClick = onClick)
+//                .pointerInput(Unit) {
+//                    awaitEachGesture {
+//                        val down = awaitFirstDown()
+//                        if (down.pressed) {
+//                            onClick()
+//                        }
+//                    }
+//                }
 
                 .background(color = animatedBGColor.value, shape = CircleShape),
             verticalAlignment = Alignment.CenterVertically,

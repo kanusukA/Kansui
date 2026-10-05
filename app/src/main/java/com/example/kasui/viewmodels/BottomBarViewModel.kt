@@ -21,9 +21,12 @@ class BottomBarViewModel : ViewModel() {
     }
 
     fun onChangeNavState(navState: NavRoutes) {
+
         viewModelScope.launch {
             NavManager.changeNavState(navState)
         }
+
+
     }
 
 }

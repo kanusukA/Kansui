@@ -400,13 +400,6 @@ fun PlayerFullView(
             ) {
 
                 Column(modifier = Modifier.fillMaxWidth()) {
-//                    CloseIcon(
-//                        modifier = Modifier
-//                            .align(Alignment.End)
-//                            .padding(end = 24.dp, bottom = 8.dp)
-//                            .clickable(onClick = { NavManager.changeNavState(NavRoutes.Home()) }),
-//                        48
-//                    )
 
                     AsyncImage(
                         modifier = Modifier
@@ -634,7 +627,12 @@ fun PlayerFullView(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text(
-                        modifier = modifier,
+                        modifier = Modifier.clickable(
+                            indication = null,
+                            interactionSource = null,
+                            onClick = {
+                                NavManager.changePlayerViewState(PlayerFullViewState.LYRICS)
+                            }),
                         text = "Lyrics",
                         fontSize = 28.sp,
                         color = TitleColor,
@@ -642,7 +640,7 @@ fun PlayerFullView(
                         fontFamily = ViaodaLibre
                     )
                     Text(
-                        modifier = modifier.clickable(
+                        modifier = Modifier.clickable(
                             indication = null,
                             interactionSource = null,
                             onClick = {

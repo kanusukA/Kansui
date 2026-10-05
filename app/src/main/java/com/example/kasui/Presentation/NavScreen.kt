@@ -3,6 +3,7 @@ package com.example.kasui.Presentation
 import android.os.Build
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresExtension
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -74,6 +75,8 @@ fun NavScreen(
 
     val currentTrack by playerViewModel.currentTrack.collectAsStateWithLifecycle()
 
+    val bottomBarVisible by NavManager.bottomBarVisible.collectAsStateWithLifecycle()
+
     LaunchedEffect(navState, currentTrack) {
         NavManager.setMiniPlayerView(navState.navRoute != PlayerView().route && currentTrack != null)
     }
@@ -84,7 +87,7 @@ fun NavScreen(
         animationSpec = tween(durationMillis = 400, delayMillis = 0)
     )
 
-    LaunchedEffect(true) {
+    LaunchedEffect(Unit) {
         NavManager.changeNavState(NavRoutes.Home())
     }
 
@@ -223,7 +226,6 @@ fun NavScreen(
                     BackHandler(enabled = true) {
                         println("POP back")
                         println("Entries : ")
-
                         if (playerFullViewState == PlayerFullViewState.QUEUE || playerFullViewState == PlayerFullViewState.LYRICS) {
                             NavManager.changePlayerViewState(PlayerFullViewState.PLAYING)
                         } else {
@@ -238,12 +240,7 @@ fun NavScreen(
                     }
                     PlayerFullView(modifier = Modifier, playerViewModel)
                 }
-//
-//                composable(route = NavRoutes.Home().route) {
-//                    HomeScreen(
-//                        lazyState
-//                    )
-//                }
+
             }
 
 
@@ -256,13 +253,18 @@ fun NavScreen(
             )
 
 
-            BottomBar(
-                welcomeViewmodel = welcomeViewmodel,
-                navController = navController,
+            AnimatedVisibility(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
-                    .padding(horizontal = 24.dp, vertical = 16.dp)
-            )
+                    .padding(horizontal = 24.dp, vertical = 16.dp),
+                visible = bottomBarVisible
+            ) {
+                BottomBar(
+                    welcomeViewmodel = welcomeViewmodel,
+                    navController = navController,
+                    modifier = Modifier
+                )
+            }
 
             //PlayerFullView(modifier = Modifier)
             //PlayerView(modifier = Modifier.align(Align      ment.BottomCenter))

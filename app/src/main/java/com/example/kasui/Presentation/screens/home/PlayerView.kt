@@ -344,6 +344,7 @@ fun PlayerFullView(
         mutableIntStateOf(
             when (playerFullViewState) {
                 PlayerFullViewState.QUEUE -> 16
+                PlayerFullViewState.LYRICS -> 18
                 else -> 0
             }
         )
@@ -360,6 +361,9 @@ fun PlayerFullView(
     val animAlbumTint = animateColorAsState(albumTint)
 
     val animAdaptiveTextSizeChange = animateIntAsState(adaptiveTextSizeChange)
+
+    val animImageFade =
+        animateFloatAsState(if (playerFullViewState == PlayerFullViewState.LYRICS) 0f else 1f)
 
     var currentTrackIndex by remember {
         mutableIntStateOf(0)
@@ -387,6 +391,25 @@ fun PlayerFullView(
             .background(color = surfaceColor)
     ) {
 
+        AnimatedVisibility(visible = playerFullViewState == PlayerFullViewState.LYRICS) {
+            LazyColumn() {
+                item {
+                    Spacer(modifier = Modifier.height(240.dp))
+                }
+                item {
+                    Text(
+                        text = currentTrack?.lyrics ?: "",
+                        fontSize = 28.sp,
+                        fontFamily = ViaodaLibre,
+                        color = TitleDarkColor
+                    )
+                }
+                item {
+                    Spacer(modifier = Modifier.height(360.dp))
+                }
+            }
+        }
+
         Column(
             modifier = Modifier
                 .padding(top = 12.dp)
@@ -406,7 +429,8 @@ fun PlayerFullView(
                             .align(Alignment.CenterHorizontally)
                             .padding(top = 32.dp)
                             .size(360.dp)
-                            .clip(RoundedCornerShape(24.dp)),
+                            .clip(RoundedCornerShape(24.dp))
+                            .alpha(animImageFade.value),
                         model = artwork ?: R.drawable.cover,
                         contentDescription = "Album Cover",
                         colorFilter = ColorFilter.tint(

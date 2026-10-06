@@ -27,7 +27,7 @@ import com.example.kasui.Data.LastFm.LastFmSearchTrackMatches
 import com.example.kasui.Data.LastFm.LastFmTrack
 import com.example.kasui.Data.structure.album.Album
 import com.example.kasui.Data.structure.song.Song
-import com.example.kasui.R
+
 import com.example.kasui.ui.surfaceHighColor
 import com.example.kasui.ui.surfaceHighestColor
 import com.example.kasui.ui.variantColor

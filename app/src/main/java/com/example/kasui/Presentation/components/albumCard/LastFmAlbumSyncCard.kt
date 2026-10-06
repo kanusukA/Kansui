@@ -22,7 +22,7 @@ import androidx.compose.ui.unit.dp
 import coil3.compose.AsyncImage
 import com.example.kasui.Data.LastFm.LastFmSearchAlbumMatch
 import com.example.kasui.Data.structure.album.Album
-import com.example.kasui.R
+
 import com.example.kasui.ui.surfaceHighColor
 import com.example.kasui.ui.surfaceHighestColor
 import com.example.kasui.ui.variantColor

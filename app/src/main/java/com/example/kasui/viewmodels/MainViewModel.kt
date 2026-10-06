@@ -5,6 +5,7 @@ import android.content.Context
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import android.provider.MediaStore
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.application
 import androidx.lifecycle.viewModelScope
@@ -33,6 +34,8 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     val lastfmState = LastFmManager.lastFmState
 
     var tagged: Boolean = false
+
+    var permissionGranted = false;
 
     // VIEW MODELS
     var homeViewModel: HomeViewModel
@@ -75,11 +78,25 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun syncMusicFiles() {
-        viewModelScope.launch {
+        viewModelScope.launch(Dispatchers.IO) {
             MediaManager.fetchMusicFiles(application.applicationContext)
             MediaManager.saveAlbums(
                 MediaManager.insertAlbums.value
             )
+        }
+    }
+
+    fun reTagging() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val albumDao = AlbumDatabase.getInstance(application.applicationContext).getAlbumDao()
+            val albumRepo = AlbumRepository(albumDao)
+
+            val tracks = albumRepo.getAllTracksNow()
+
+            val tagged = MediaManager.loadTags(application.applicationContext, tracks, true)
+
+            albumRepo.addTracks(tagged)
+
         }
     }
 

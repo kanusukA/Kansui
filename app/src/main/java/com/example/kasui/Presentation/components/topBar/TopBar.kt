@@ -8,6 +8,7 @@ import androidx.compose.animation.core.Animatable
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -28,6 +29,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kasui.Data.request.MediaManagerState
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.PlayerFullViewState
@@ -35,6 +38,7 @@ import com.example.kasui.Presentation.screens.home.AlbumScreenState
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.ViaodaLibre
 import com.example.kasui.ui.textOnSurface
+import com.example.kasui.viewmodels.MainViewModel
 import com.example.kasui.viewmodels.Player
 import com.example.kasui.viewmodels.TopBarSelectionState
 import com.example.kasui.viewmodels.TopBarViewModel
@@ -60,6 +64,8 @@ fun TopBar(
     val playingTrack by topBarViewModel.playerViewModel.currentTrack.collectAsStateWithLifecycle()
 
     val playerFullViewState by NavManager.playerViewState.collectAsStateWithLifecycle()
+
+    val mainViewModel: MainViewModel = viewModel()
 
     val animatedVisibility = remember { Animatable(TitleColor) }
     var TopPadding by remember {
@@ -134,7 +140,13 @@ fun TopBar(
             }
 
             is NavRoutes.Home -> {
-                headingText = "Kansui"
+                headingText = if (mediaState == MediaManagerState.LOADING_RAW) {
+                    "Loading Tracks"
+                } else if (mediaState == MediaManagerState.LOADING_INFO) {
+                    "Tagging"
+                } else {
+                    "Kansui"
+                }
                 TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
                 fontSizeScale = 85f
@@ -142,7 +154,13 @@ fun TopBar(
             }
 
             is NavRoutes.Library -> {
-                headingText = "Kansui"
+                headingText = if (mediaState == MediaManagerState.LOADING_RAW) {
+                    "Loading Tracks"
+                } else if (mediaState == MediaManagerState.LOADING_INFO) {
+                    "Tagging"
+                } else {
+                    "Kansui"
+                }
                 TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
                 fontSizeScale = 85f
@@ -150,7 +168,13 @@ fun TopBar(
             }
 
             is NavRoutes.Search -> {
-                headingText = "Search"
+                headingText = if (mediaState == MediaManagerState.LOADING_RAW) {
+                    "Loading Tracks"
+                } else if (mediaState == MediaManagerState.LOADING_INFO) {
+                    "Tagging"
+                } else {
+                    "Kansui"
+                }
                 TopPadding = 0.dp
                 topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
                 fontSizeScale = 85f
@@ -189,6 +213,16 @@ fun TopBar(
                         fontSizeScale = 72f
                         subFontSizeScale = 32f
                         subSubHeading = ""
+                        NavManager.setTopBarVisibility(true)
+                    }
+
+                    PlayerFullViewState.LYRICS -> {
+                        headingText = playingTrack?.name ?: ""
+                        subHeading = playingTrack?.albumName ?: ""
+                        subSubHeading = playingTrack?.artistName ?: ""
+                        fontSizeScale = 40f
+                        TopPadding = 20.dp
+                        subFontSizeScale = 28f
                         NavManager.setTopBarVisibility(true)
                     }
 
@@ -261,6 +295,12 @@ fun TopBar(
         AnimatedContent(selectionMode) { mode ->
             if (!mode) {
                 Text(
+                    modifier = Modifier.clickable(
+                        enabled = navState.navRoute == NavRoutes.Home().route,
+                        indication = null,
+                        interactionSource = null,
+                        onClick = { mainViewModel.reTagging() }
+                    ),
                     text = headingText,
                     fontFamily = ViaodaLibre,
                     letterSpacing = (-4).sp,

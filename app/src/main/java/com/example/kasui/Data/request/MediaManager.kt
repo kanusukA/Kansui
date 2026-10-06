@@ -82,6 +82,7 @@ object MediaManager {
     }
 
     fun loadTags(context: Context, tracks: List<Track>, force: Boolean = false): List<Track> {
+        _mediaState.update { MediaManagerState.LOADING_INFO }
         var startTime = System.currentTimeMillis()
         println("tags loading ${tracks.size} ${System.currentTimeMillis() - startTime}")
         val listOfIds = mutableListOf<Long>();
@@ -89,7 +90,7 @@ object MediaManager {
         startTime = System.currentTimeMillis()
 
         val pfds = tracks.mapNotNull {
-            if (it.isTagLoaded || it.fileType != FILETYPES.FLAC) {
+            if ((it.isTagLoaded && !force) || it.fileType != FILETYPES.FLAC) {
                 null
             } else {
                 val fd = context.contentResolver.openFileDescriptor(it.uri, "r")
@@ -104,6 +105,7 @@ object MediaManager {
         println("loaded fds - ${fds.size} in ${System.currentTimeMillis() - startTime}")
 
         if (fds.isEmpty()) {
+            _mediaState.update { MediaManagerState.FREE }
             return emptyList()
         }
 
@@ -117,6 +119,9 @@ object MediaManager {
         val tagged = tags.mapNotNull { tagTrack ->
             val track = tracks.find { it.id.toString() == tagTrack["id"] }
             if (track != null) {
+                track.albumName = tagTrack["ALBUM"] ?: track.albumName
+                track.name = tagTrack["TITLE"] ?: track.name
+                track.artistName = tagTrack["ARTIST"] ?: track.artistName
                 track.discNumber = tagTrack["DISCNUMBER"]?.toIntOrNull()
                 track.trackNumber = tagTrack["TRACKNUMBER"]?.toIntOrNull()
                 track.lyrics =
@@ -140,6 +145,8 @@ object MediaManager {
         }
 
         println("tags loaded")
+
+        _mediaState.update { MediaManagerState.FREE }
 
         return tagged
 
@@ -292,6 +299,13 @@ object MediaManager {
         }
         _insertAlbums.update { insertAlbum }
         _mediaState.update { MediaManagerState.FREE }
+
+        val updatedTracks = albumRepository?.getAllTracksNow()
+        if (!updatedTracks.isNullOrEmpty()) {
+            val tagged = loadTags(context, updatedTracks)
+            albumRepository?.addTracks(tagged)
+        }
+
 
     }
 

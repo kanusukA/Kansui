@@ -30,7 +30,7 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.compose.AsyncImage
 import com.example.kasui.Data.structure.Artwork
-import com.example.kasui.R
+
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.surfaceHighestColor

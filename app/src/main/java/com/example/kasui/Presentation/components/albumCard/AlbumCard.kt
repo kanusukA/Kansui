@@ -52,9 +52,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil3.Bitmap
 import coil3.compose.AsyncImage
 import coil3.toCoilUri
+import com.example.kasui.R
 import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.Presentation.components.Selectable
-import com.example.kasui.R
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.UncutSans

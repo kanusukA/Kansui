@@ -15,16 +15,20 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kasui.databinding.ActivityMainBinding
+import com.example.kasui.MainActivity
 import com.example.kasui.Data.MusicBrainZ.musicBrainz
 import com.example.kasui.Data.request.MediaManager
 import com.example.kasui.Presentation.NavScreen
 import com.example.kasui.Presentation.screens.home.WelcomeScreen
-import com.example.kasui.databinding.ActivityMainBinding
+
 import com.example.kasui.viewmodels.MainViewModel
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -33,6 +37,8 @@ import kotlin.time.Duration.Companion.milliseconds
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
+
+    private val permissionForAudio = MutableStateFlow(false)
 
     private val audioPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
         Manifest.permission.READ_MEDIA_AUDIO
@@ -44,12 +50,7 @@ class MainActivity : AppCompatActivity() {
     private val requestPermissionLauncher = registerForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted: Boolean ->
-        if (isGranted) {
-            println("Permission Granted")
-        } else {
-            // Permission denied
-
-        }
+        permissionForAudio.update { isGranted }
     }
 
     fun checkAudioPermission() {
@@ -59,6 +60,9 @@ class MainActivity : AppCompatActivity() {
             ) != PackageManager.PERMISSION_GRANTED
         ) {
             requestPermissionLauncher.launch(audioPermission)
+
+        } else {
+            permissionForAudio.update { true }
         }
     }
 
@@ -78,23 +82,28 @@ class MainActivity : AppCompatActivity() {
 
             val mainViewModel: MainViewModel = viewModel()
 
-            LaunchedEffect(Unit) {
-                mainViewModel.initMain(applicationContext)
+            // fetch and tag when permission is granted
+            val permission by permissionForAudio.collectAsStateWithLifecycle()
+
+            LaunchedEffect(permission) {
+                if (permission) {
+                    mainViewModel.initMain(applicationContext)
+                }
             }
 
-            val tracks by mainViewModel.dbTracks.collectAsStateWithLifecycle();
+            val tracks by mainViewModel.dbTracks.collectAsStateWithLifecycle()
 
             val tagCoroutine = CoroutineScope(Dispatchers.IO)
 
-            LaunchedEffect(tracks) {
-                if (!mainViewModel.tagged && tracks.isNotEmpty()) {
-                    tagCoroutine.launch(Dispatchers.IO) {
-                        val taggedTracks = MediaManager.loadTags(applicationContext, tracks)
-                        MediaManager.saveTracks(taggedTracks)
-                        mainViewModel.tagged = true
-                    }
-                }
-            }
+//            LaunchedEffect(tracks) {
+//                if (!mainViewModel.tagged && tracks.isNotEmpty()) {
+//                    tagCoroutine.launch(Dispatchers.IO) {
+//                        val taggedTracks = MediaManager.loadTags(applicationContext, tracks)
+//                        MediaManager.saveTracks(taggedTracks)
+//                        mainViewModel.tagged = true
+//                    }
+//                }
+//            }
 
 
             val coroutineScope = rememberCoroutineScope()

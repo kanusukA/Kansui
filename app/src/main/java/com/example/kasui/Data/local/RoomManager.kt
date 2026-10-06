@@ -127,10 +127,13 @@ interface AlbumDao {
         (Track::class),
         (AlbumTrackCrossRef::class)
     ],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
-@TypeConverters(UriConverter::class, ColorConverter::class, FileTypeConvertor::class)
+@TypeConverters(
+    UriConverter::class, ColorConverter::class, FileTypeConvertor::class,
+    LyricConvertor::class
+)
 abstract class AlbumDatabase : RoomDatabase() {
 
     abstract fun getAlbumDao(): AlbumDao
@@ -170,6 +173,12 @@ class AlbumRepository(private val albumDao: AlbumDao) {
         coroutineScope.launch(Dispatchers.IO) {
             albumDao.insertAlbum(nAlbum, genres, tracks)
         }
+    }
+
+    suspend fun addAlbumNow(nAlbum: AlbumEntity, genres: List<Genre>, tracks: List<Track>) {
+
+        albumDao.insertAlbum(nAlbum, genres, tracks)
+
     }
 
     suspend fun getAllTracksNow(): List<Track> {

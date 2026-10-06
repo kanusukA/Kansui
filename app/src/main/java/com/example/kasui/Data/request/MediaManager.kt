@@ -9,8 +9,10 @@ import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
 import androidx.annotation.RequiresExtension
+import androidx.compose.runtime.tooling.parseSourceInformation
 import androidx.core.database.getIntOrNull
 import androidx.core.database.getStringOrNull
+import androidx.core.net.toFile
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.application
 import coil3.Bitmap
@@ -19,6 +21,7 @@ import com.example.kasui.Data.local.AlbumDatabase
 import com.example.kasui.Data.local.AlbumRepository
 import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.Data.structure.Genre
+import com.example.kasui.Data.structure.Lyric
 import com.example.kasui.Data.structure.album.Album
 import com.example.kasui.Data.structure.album.AlbumAttributes
 import com.example.kasui.Data.structure.album.AlbumEntity
@@ -42,6 +45,7 @@ import kotlinx.coroutines.flow.forEach
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import java.io.File
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -124,14 +128,16 @@ object MediaManager {
                 track.artistName = tagTrack["ARTIST"] ?: track.artistName
                 track.discNumber = tagTrack["DISCNUMBER"]?.toIntOrNull()
                 track.trackNumber = tagTrack["TRACKNUMBER"]?.toIntOrNull()
-                track.lyrics =
-                    tagTrack["LYRICS"] ?: tagTrack["SYNCEDLYRICS"] ?: tagTrack["UNSYNCEDLYRICS"]
+                if (!track.hasLyrics) {
+                    track.lyrics =
+                        tagTrack["LYRICS"] ?: tagTrack["SYNCEDLYRICS"] ?: tagTrack["UNSYNCEDLYRICS"]
+                    if (track.lyrics != null && (track.lyrics?.isNotEmpty() ?: false)) {
+                        track.hasLyrics = true
+                    }
+                }
                 track.releaseDate = tagTrack["DATE"]
                 track.publisher = tagTrack["PUBLISHER"] ?: tagTrack["LABEL"]
                 track.comment = tagTrack["COMMENT"]
-                if (track.lyrics != null && (track.lyrics?.isNotEmpty() ?: false)) {
-                    track.hasLyrics = true
-                }
                 track.isTagLoaded = true;
 
             }
@@ -156,11 +162,11 @@ object MediaManager {
     suspend fun fetchMusicFiles(context: Context) {
         val tracks = albumRepository!!.getAllTracksNow()
 
-
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         _mediaState.update { MediaManagerState.LOADING_RAW }
         val projection = arrayOf(
             MediaStore.Audio.Media._ID,
+
             MediaStore.Audio.Media.ALBUM,
             MediaStore.Audio.Media.ALBUM_ARTIST,
             MediaStore.Audio.Media.ALBUM_ID,
@@ -176,7 +182,8 @@ object MediaManager {
             MediaStore.Audio.Media.SAMPLERATE,
             MediaStore.Audio.Media.TITLE,
             MediaStore.Audio.Media.TRACK,
-            MediaStore.Audio.Media.MIME_TYPE
+            MediaStore.Audio.Media.MIME_TYPE,
+            MediaStore.Audio.Media.DATA
         )
         val selection = "${MediaStore.Audio.Media.IS_MUSIC} != 0"
 
@@ -203,6 +210,7 @@ object MediaManager {
             val TITLE_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
             val TRACK_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
             val MIME_TYPE_INDEX = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
+            val DATA_INDEX = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
 
             if (cursor.isLast) {
                 println("No Music file found")
@@ -214,11 +222,14 @@ object MediaManager {
                 val albumUri = ContentUris.withAppendedId(uri, cursor.getLong(ALBUM_ID_Index))
                 val mime_type = cursor.getStringOrNull(MIME_TYPE_INDEX)
 
+                val path = cursor.getStringOrNull(DATA_INDEX)
+
                 val musicId = cursor.getLong(_ID_Index)
                 if (tracks.find { it.id == musicId } != null) {
                     println("SKIPPING TRACK LOADING - ID : $musicId")
                     continue
                 }
+
 
                 val filetype = if (mime_type == "audio/mpeg" || mime_type == "audio/mp3") {
                     FILETYPES.MP3
@@ -236,8 +247,24 @@ object MediaManager {
                     durationInMillis = cursor.getIntOrNull(DURATION_Index) ?: 0,
                     hasLyrics = false,
                     albumId = cursor.getLong(ALBUM_ID_Index),
-                    fileType = filetype
-                )
+                    fileType = filetype,
+
+                    )
+
+                if (path != null) {
+                    val lrcFilePath = path.substringBeforeLast(".") + ".lrc"
+                    val lrcFile = File(lrcFilePath)
+
+                    if (lrcFile.exists()) {
+                        track.lyrics = lrcFile.readText()
+                        val parsed = parseSyncedLyrics(lrcFile.readText())
+                        track.lyricsSynced = parsed
+                        track.hasLyrics = true
+                        track.isSynced = true
+
+                    }
+
+                }
 
 
                 var index: Int? = null
@@ -298,6 +325,11 @@ object MediaManager {
             }
         }
         _insertAlbums.update { insertAlbum }
+
+        _insertAlbums.value.forEach {
+            albumRepository?.addAlbumNow(it.albumEntity, it.genre, it.tracks)
+        }
+
         _mediaState.update { MediaManagerState.FREE }
 
         val updatedTracks = albumRepository?.getAllTracksNow()
@@ -308,6 +340,7 @@ object MediaManager {
 
 
     }
+
 
     fun fetchArtworkFromTrackUri(context: Context, musicUri: Uri): android.graphics.Bitmap? {
         // return context.contentResolver.loadThumbnail(musicUri, Size(500, 500), null)
@@ -326,6 +359,27 @@ object MediaManager {
         } finally {
             retriever.release() // Always free up system resources
         }
+    }
+
+    private val lrcRegex = Regex("\\[(\\d{2}):(\\d{2})\\.(\\d{2,3})](.*)")
+
+    fun parseSyncedLyrics(text: String): List<Lyric> {
+        return text.lines()
+            .mapNotNull { line ->
+                val matchResult = lrcRegex.find(line.trim()) ?: return@mapNotNull null
+
+                val min = matchResult.groupValues[1].toLong()
+                val sec = matchResult.groupValues[2].toLong()
+                val msStr = matchResult.groupValues[3]
+                // Handle both 2-digit (hundredths) and 3-digit (milliseconds) formats
+                val ms = if (msStr.length == 2) msStr.toLong() * 10 else msStr.toLong()
+                val text = matchResult.groupValues[4].trim()
+
+                val totalMs = (min * 60 * 1000) + (sec * 1000) + ms
+
+                Lyric(totalMs, text)
+            }.sortedBy { it.timestamp }
+
     }
 
 
@@ -410,6 +464,7 @@ object MediaManager {
     }
 
 }
+
 
 enum class FILETYPES {
     MP3,

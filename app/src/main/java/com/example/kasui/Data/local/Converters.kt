@@ -5,6 +5,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
 import androidx.room.TypeConverter
 import com.example.kasui.Data.request.FILETYPES
+import com.example.kasui.Data.structure.Lyric
 
 class UriConverter {
     @TypeConverter
@@ -31,7 +32,7 @@ class ColorConverter {
 }
 
 class FileTypeConvertor {
-    
+
     @TypeConverter
     fun toFileType(filetype: Int): FILETYPES {
         return FILETYPES.entries[filetype]
@@ -40,6 +41,29 @@ class FileTypeConvertor {
     @TypeConverter
     fun fromFileType(filetype: FILETYPES): Int {
         return filetype.ordinal
+    }
+
+}
+
+class LyricConvertor {
+
+    @TypeConverter
+    fun toLyric(lyrics: String): List<Lyric> {
+        return lyrics.split("^").mapNotNull {
+            val timestamp = it.substringBefore("|").toLongOrNull()
+            if (timestamp != null) {
+                Lyric(timestamp, it.substringAfter("|"))
+            } else {
+                null
+            }
+        }
+    }
+
+    @TypeConverter
+    fun fromLyrics(lyrics: List<Lyric>): String {
+        return lyrics.map {
+            it.timestamp.toString() + "|" + it.text
+        }.joinToString("^")
     }
 
 }

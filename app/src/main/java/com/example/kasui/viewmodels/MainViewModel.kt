@@ -80,9 +80,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     fun syncMusicFiles() {
         viewModelScope.launch(Dispatchers.IO) {
             MediaManager.fetchMusicFiles(application.applicationContext)
-            MediaManager.saveAlbums(
-                MediaManager.insertAlbums.value
-            )
         }
     }
 

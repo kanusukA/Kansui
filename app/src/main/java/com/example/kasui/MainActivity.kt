@@ -91,59 +91,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-            val tracks by mainViewModel.dbTracks.collectAsStateWithLifecycle()
 
-            val tagCoroutine = CoroutineScope(Dispatchers.IO)
 
-//            LaunchedEffect(tracks) {
-//                if (!mainViewModel.tagged && tracks.isNotEmpty()) {
-//                    tagCoroutine.launch(Dispatchers.IO) {
-//                        val taggedTracks = MediaManager.loadTags(applicationContext, tracks)
-//                        MediaManager.saveTracks(taggedTracks)
-//                        mainViewModel.tagged = true
-//                    }
-//                }
-//            }
 
 
             val coroutineScope = rememberCoroutineScope()
 
-//            LaunchedEffect(Unit) {
-//                delay(1500.milliseconds)
-//                async {
-//                    musicBrainz.searchReleases(
-//                        "I let it in and it took everything", null,
-//                        {
-//                            println("Failed API REQUEST 0")
-//                        },
-//                        { result ->
-//                            if (!result.releases.isNullOrEmpty()) {
-//                                coroutineScope.launch {
-////                                    musicBrainz.getRelease(
-////                                        result.releases.get(1).id,
-////                                        onFailure = {},
-////                                        onSuccess = {}
-////                                    )
-//                                    musicBrainz.getReleaseCover(
-//                                        result.releases.get(1).id,
-//                                        onFailure = {},
-//                                        onSuccess = { coverArtResponse ->
-//                                            println(coverArtResponse)
-//
-//                                        }
-//                                    )
-//
-//                                }
-//
-//
-//                            }
-//
-//
-//                        })
-//                }
-//
-//
-//            }
+
             //WelcomeScreen()
             NavScreen(mainViewModel)
         }

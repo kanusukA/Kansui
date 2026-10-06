@@ -32,7 +32,7 @@ object PlayerListener : Player.Listener {
 
     private var _trackQueue = MutableStateFlow<List<MediaItem>>(emptyList())
     val trackQueue = _trackQueue.asStateFlow()
-    
+
 
     override fun onPlayerError(error: PlaybackException) {
         super.onPlayerError(error)
@@ -76,6 +76,13 @@ object Player {
 
     private var _exoPlayer = MutableStateFlow<ExoPlayer?>(null)
     val exoPlayer = _exoPlayer.asStateFlow()
+
+    val progressMs: Flow<Long> = flow {
+        while (true) {
+            exoPlayer.value?.currentPosition ?: 0L
+            delay(500.milliseconds)
+        }
+    }
 
 
     val progress: Flow<Float> = flow {

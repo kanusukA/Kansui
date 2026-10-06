@@ -396,13 +396,25 @@ fun PlayerFullView(
                 item {
                     Spacer(modifier = Modifier.height(240.dp))
                 }
-                item {
-                    Text(
-                        text = currentTrack?.lyrics ?: "",
-                        fontSize = 28.sp,
-                        fontFamily = ViaodaLibre,
-                        color = TitleDarkColor
-                    )
+                if (currentTrack != null && currentTrack!!.hasLyrics && currentTrack!!.isSynced) {
+                    items(currentTrack!!.lyricsSynced) { lyric ->
+
+                        Text(
+                            text = lyric.text,
+                            fontSize = 28.sp,
+                            fontFamily = ViaodaLibre,
+                            color = TitleDarkColor
+                        )
+                    }
+                } else if (currentTrack != null && currentTrack!!.hasLyrics) {
+                    item {
+                        Text(
+                            text = currentTrack?.lyrics ?: "",
+                            fontSize = 28.sp,
+                            fontFamily = ViaodaLibre,
+                            color = TitleDarkColor
+                        )
+                    }
                 }
                 item {
                     Spacer(modifier = Modifier.height(360.dp))

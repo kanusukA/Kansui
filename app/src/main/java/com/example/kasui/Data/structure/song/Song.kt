@@ -7,6 +7,7 @@ import com.example.kasui.Data.request.FILETYPES
 import com.example.kasui.Data.structure.Artwork
 import com.example.kasui.Data.structure.EditorialNotes
 import com.example.kasui.Data.structure.Genre
+import com.example.kasui.Data.structure.Lyric
 
 
 @Entity(tableName = "tracks")
@@ -27,13 +28,16 @@ data class Track(
     val url: String? = null,
     var publisher: String? = null,
     var comment: String? = null,
+
     var lyrics: String? = null,
+    var lyricsSynced: List<Lyric> = emptyList(),
 
     //Required
     var name: String,
     var durationInMillis: Int,
 //    val genreNames: List<Genre>,
     var hasLyrics: Boolean,
+    var isSynced: Boolean = false,
     val uri: Uri,
     val albumId: Long,
 

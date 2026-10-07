@@ -9,6 +9,7 @@ import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
@@ -23,6 +24,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.tooling.preview.Preview
@@ -30,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import com.example.kasui.Data.request.MediaManager
 import com.example.kasui.Data.request.MediaManagerState
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
@@ -295,12 +298,12 @@ fun TopBar(
         AnimatedContent(selectionMode) { mode ->
             if (!mode) {
                 Text(
-                    modifier = Modifier.clickable(
-                        enabled = navState.navRoute == NavRoutes.Home().route,
-                        indication = null,
-                        interactionSource = null,
-                        onClick = { mainViewModel.reTagging() }
-                    ),
+                    modifier = Modifier.pointerInput(Unit) {
+                        detectTapGestures(
+                            onTap = { mainViewModel.reTagging() },
+                            onLongPress = { mainViewModel.refetch() }
+                        )
+                    },
                     text = headingText,
                     fontFamily = ViaodaLibre,
                     letterSpacing = (-4).sp,

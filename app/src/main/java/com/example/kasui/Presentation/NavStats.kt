@@ -1,10 +1,15 @@
 package com.example.kasui.Presentation
 
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.core.AnimationSpec
+import androidx.compose.animation.core.tween
 import com.example.kasui.Data.structure.album.Album
 import com.example.kasui.Presentation.screens.home.AlbumScreenState
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 
@@ -86,15 +91,25 @@ object NavManager {
     private var _bottomBarVisible = MutableStateFlow(true)
     val bottomBarVisible = _bottomBarVisible.asStateFlow()
 
+    private var _playerLyricsFadeUi = MutableStateFlow(false)
+    val playerLyricsFadeUi = _playerLyricsFadeUi.asStateFlow()
+
+    val animPlayerFadeEnterTween = tween<EnterTransition>(durationMillis = 300, delayMillis = 0)
+    val animPlayerFadeExitTween = tween<ExitTransition>(durationMillis = 600, delayMillis = 2000)
+
+    fun setPlayerLyricsFadeUi(fade: Boolean) {
+        _playerLyricsFadeUi.update { fade }
+    }
+
     fun changeNavState(state: NavRoutes) {
         if (state == NavRoutes.Album() && selectedAlbum.value == null) {
             throw Exception("ALBUM VIEW SELECTED WITHOUT A ALBUM TO SHOW!")
         }
-//        if (state.navRoute == NavRoutes.PlayerView().route && playerViewState.value == PlayerFullViewState.LYRICS) {
-//            _bottomBarVisible.update { false }
-//        } else {
-//            _bottomBarVisible.update { true }
-//        }
+        if (state.navRoute == NavRoutes.PlayerView().route && playerViewState.value == PlayerFullViewState.LYRICS) {
+            _bottomBarVisible.update { false }
+        } else {
+            _bottomBarVisible.update { true }
+        }
         _navStates.update { state }
     }
 
@@ -150,7 +165,7 @@ object NavManager {
 
     fun changePlayerViewState(state: PlayerFullViewState) {
         _playerViewState.update { state }
-        _bottomBarVisible.update { state != PlayerFullViewState.LYRICS }
+        _bottomBarVisible.update { state == PlayerFullViewState.PLAYING }
     }
 
 //    fun playTrack(track: Track) {

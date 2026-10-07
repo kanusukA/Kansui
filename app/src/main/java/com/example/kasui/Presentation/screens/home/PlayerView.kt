@@ -7,15 +7,20 @@ import android.text.style.BackgroundColorSpan
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.animateIntSizeAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
+import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -64,6 +69,8 @@ import androidx.compose.ui.layout.onGloballyPositioned
 import androidx.compose.ui.layout.positionInParent
 import androidx.compose.ui.layout.positionInRoot
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalWindowInfo
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
 import androidx.compose.ui.tooling.preview.Preview
@@ -82,6 +89,7 @@ import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.TitleDarkColor
 import com.example.kasui.ui.UncutSans
 import com.example.kasui.ui.ViaodaLibre
+import com.example.kasui.ui.customs.ThickenText
 import com.example.kasui.ui.customs.Trigger
 import com.example.kasui.ui.customs.seeker
 import com.example.kasui.ui.customs.slider
@@ -95,7 +103,9 @@ import com.example.kasui.viewmodels.Player
 import com.example.kasui.viewmodels.PlayerListener
 import com.example.kasui.viewmodels.PlayerStates
 import com.example.kasui.viewmodels.PlayerViewModel
+import kotlinx.coroutines.delay
 import kotlin.math.abs
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun PlayerView(
@@ -325,6 +335,7 @@ fun PlayerFullView(
 
     // PROGRESS AND SEEK
     val progress by Player.progress.collectAsStateWithLifecycle(0f)
+    val progressMs by Player.progressMs.collectAsStateWithLifecycle(0L)
     val progressText by Player.ProgressText.collectAsStateWithLifecycle("")
     var seeking by remember {
         mutableStateOf(false)
@@ -358,6 +369,9 @@ fun PlayerFullView(
         )
     }
 
+    val screenWidth = LocalWindowInfo.current.containerDpSize.width
+    val screenHeight = LocalWindowInfo.current.containerDpSize.height
+
     val animAlbumTint = animateColorAsState(albumTint)
 
     val animAdaptiveTextSizeChange = animateIntAsState(adaptiveTextSizeChange)
@@ -371,14 +385,60 @@ fun PlayerFullView(
 
     val queueState = rememberLazyListState()
 
+    val playerFadeUi by NavManager.playerLyricsFadeUi.collectAsStateWithLifecycle()
+
+    LaunchedEffect(playerFadeUi) {
+        if (playerFadeUi && playerFullViewState == PlayerFullViewState.LYRICS) {
+            // DO nothing
+        } else if (!playerFadeUi && playerFullViewState == PlayerFullViewState.LYRICS) {
+            delay(500.milliseconds)
+            NavManager.setPlayerLyricsFadeUi(true)
+        } else {
+            NavManager.setPlayerLyricsFadeUi(false)
+        }
+    }
+
+    var currentLyricIndex by remember { mutableIntStateOf(0) }
+
+    val lyricLazyState = rememberLazyListState()
+
+    LaunchedEffect(progressMs) {
+        if (currentTrack != null && currentTrack!!.lyricsSynced.isNotEmpty()) {
+            val nextIndex =
+                currentTrack!!.lyricsSynced.indexOfFirst { it.timestamp > progressMs }
+            if (nextIndex > 0) {
+                currentLyricIndex = nextIndex - 1
+
+            }
+        }
+    }
+
+    LaunchedEffect(currentLyricIndex) {
+//        println("LYRIC CHANGED : ${currentLyricIndex}")
+        lyricLazyState.animateScrollToItem(
+            currentLyricIndex,
+            scrollOffset = -(screenHeight.value.toInt() / 2)
+        )
+
+
+    }
+
     LaunchedEffect(playerFullViewState) {
         if (playerFullViewState == PlayerFullViewState.QUEUE) {
             queueState.animateScrollToItem(currentTrackIndex)
+        }
+        if (playerFullViewState == PlayerFullViewState.LYRICS) {
+            NavManager.setPlayerLyricsFadeUi(true)
+        } else {
+            NavManager.setPlayerLyricsFadeUi(false)
         }
     }
 
     LaunchedEffect(Unit, currentTrack) {
         currentTrackIndex = player?.currentMediaItemIndex ?: 0
+//        lyricLazyState.animateScrollToItem(0, scrollOffset = -(screenHeight.value.toInt() / 2))
+        currentLyricIndex = 0
+
     }
 
     val artwork =
@@ -389,22 +449,92 @@ fun PlayerFullView(
         Modifier
             .fillMaxSize()
             .background(color = surfaceColor)
+            .pointerInput(Unit) {
+                detectTapGestures(
+                    onTap = {
+                        NavManager.setPlayerLyricsFadeUi(false)
+                    }
+                )
+            }
     ) {
 
-        AnimatedVisibility(visible = playerFullViewState == PlayerFullViewState.LYRICS) {
-            LazyColumn() {
+        AnimatedVisibility(
+            visible = playerFullViewState == PlayerFullViewState.LYRICS,
+            enter = slideInHorizontally { -it } + fadeIn(tween(500, easing = LinearEasing)),
+            exit = slideOutHorizontally { -it } + fadeOut(
+                tween(
+                    500,
+                    delayMillis = 500,
+                    easing = LinearEasing
+                )
+            )
+        ) {
+            LazyColumn(
+                state = lyricLazyState
+            ) {
                 item {
                     Spacer(modifier = Modifier.height(240.dp))
                 }
                 if (currentTrack != null && currentTrack!!.hasLyrics && currentTrack!!.isSynced) {
-                    items(currentTrack!!.lyricsSynced) { lyric ->
+                    items(currentTrack!!.lyricsSynced.size) { index ->
+                        val lyric = currentTrack!!.lyricsSynced[index]
 
-                        Text(
-                            text = lyric.text,
-                            fontSize = 28.sp,
-                            fontFamily = ViaodaLibre,
-                            color = TitleDarkColor
+                        var scale by remember { mutableFloatStateOf(0.5f) }
+
+                        LaunchedEffect(currentLyricIndex, Unit) {
+
+                            if (currentLyricIndex == index) {
+                                scale = 1.3f
+                            } else {
+                                val offset = 1.25f - ((abs(currentLyricIndex - index).coerceIn(
+                                    1,
+                                    (currentTrack!!.lyricsSynced.size - 1)
+                                ).toFloat()
+                                        ) / (currentTrack!!.lyricsSynced.size / 4))
+
+                                scale = offset.coerceIn(0.45f, 1.25f)
+                            }
+
+
+                        }
+
+                        Spacer(
+                            modifier = Modifier.height(
+                                animateDpAsState(
+                                    targetValue = if (currentLyricIndex == index) 24.dp else 12.dp,
+                                    animationSpec = tween(easing = LinearEasing)
+                                ).value
+                            )
                         )
+
+                        ThickenText(
+                            modifier = Modifier
+                                .alpha(scale.coerceIn(0f, 1f)),
+                            text = lyric.text,
+                            selected = currentLyricIndex == index,
+                            baseStyle = TextStyle(
+                                fontSize = 24.sp,
+                                fontFamily = ViaodaLibre,
+                                color = TitleDarkColor
+                            ),
+                            colorAnim = if (currentLyricIndex == index) TitleColor else TitleDarkColor,
+                            scale = scale
+
+                        )
+                        Spacer(
+                            modifier = Modifier.height(
+                                animateDpAsState(
+                                    targetValue = if (currentLyricIndex == index) 24.dp else 12.dp,
+                                    animationSpec = tween(easing = LinearEasing)
+                                ).value
+                            )
+                        )
+//                        Text(
+//                            text = lyric.text,
+//                            fontSize = 28.sp,
+//                            fontFamily = ViaodaLibre,
+//                            color = TitleDarkColor
+//                        )
                     }
                 } else if (currentTrack != null && currentTrack!!.hasLyrics) {
                     item {
@@ -422,273 +552,297 @@ fun PlayerFullView(
             }
         }
 
-        Column(
-            modifier = Modifier
-                .padding(top = 12.dp)
-                .fillMaxSize(),
-            horizontalAlignment = Alignment.CenterHorizontally
+        AnimatedVisibility(
+            visible = !playerFadeUi,
+            enter = fadeIn(tween(durationMillis = 400)),
+            exit = fadeOut(tween(durationMillis = 800, delayMillis = 2000))
         ) {
-            Box(
+            Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(560.dp + (animAdaptiveTextSizeChange.value * 5).dp)
+                    .padding(top = 12.dp)
+                    .fillMaxSize(),
+                horizontalAlignment = Alignment.CenterHorizontally
             ) {
-
-                Column(modifier = Modifier.fillMaxWidth()) {
-
-                    AsyncImage(
-                        modifier = Modifier
-                            .align(Alignment.CenterHorizontally)
-                            .padding(top = 32.dp)
-                            .size(360.dp)
-                            .clip(RoundedCornerShape(24.dp))
-                            .alpha(animImageFade.value),
-                        model = artwork ?: R.drawable.cover,
-                        contentDescription = "Album Cover",
-                        colorFilter = ColorFilter.tint(
-                            animAlbumTint.value,
-                            blendMode = BlendMode.SrcAtop
-                        )
-                    )
-                }
-                // QUEUE
-                androidx.compose.animation.AnimatedVisibility(
-                    modifier = Modifier.align(Alignment.Center),
-                    visible = playerFullViewState == PlayerFullViewState.QUEUE,
-                    enter = slideInHorizontally { it * 2 },
-                    exit = slideOutHorizontally { it * 2 }
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(560.dp + (animAdaptiveTextSizeChange.value * 5).dp)
                 ) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        state = queueState,
-                        horizontalAlignment = Alignment.End
+
+                    Column(modifier = Modifier.fillMaxWidth()) {
+
+                        AsyncImage(
+                            modifier = Modifier
+                                .align(Alignment.CenterHorizontally)
+                                .padding(top = 32.dp)
+                                .size(360.dp)
+                                .clip(RoundedCornerShape(24.dp))
+                                .alpha(animImageFade.value),
+                            model = artwork ?: R.drawable.cover,
+                            contentDescription = "Album Cover",
+                            colorFilter = ColorFilter.tint(
+                                animAlbumTint.value,
+                                blendMode = BlendMode.SrcAtop
+                            )
+                        )
+                    }
+                    // QUEUE
+                    androidx.compose.animation.AnimatedVisibility(
+                        modifier = Modifier.align(Alignment.Center),
+                        visible = playerFullViewState == PlayerFullViewState.QUEUE,
+                        enter = slideInHorizontally { it * 2 },
+                        exit = slideOutHorizontally { it * 2 }
                     ) {
-                        item { Spacer(modifier = Modifier.height(120.dp)) }
+                        LazyColumn(
+                            modifier = Modifier
+                                .fillMaxWidth(),
+                            state = queueState,
+                            horizontalAlignment = Alignment.End
+                        ) {
+                            item { Spacer(modifier = Modifier.height(120.dp)) }
 
-                        items(
-                            trackQueue.size,
-                            key = { return@items trackQueue[it].id }) { trackIndex ->
-                            Spacer(modifier = Modifier.height(12.dp))
+                            items(
+                                trackQueue.size,
+                                key = { return@items trackQueue[it].id }) { trackIndex ->
+                                Spacer(modifier = Modifier.height(12.dp))
 
-                            if (currentTrackIndex == trackIndex) {
-                                Text(
-                                    modifier = Modifier
-                                        .padding(end = 12.dp)
-                                        .slider(
-                                            onSlide = {},
-                                            onEnd = {
-                                                if (it) {
-                                                    Player.removeTrackAt(trackIndex)
-                                                }
-                                            },
-                                            threshold = 500f,
-                                            color = TitleColor
+                                if (currentTrackIndex == trackIndex) {
+                                    Text(
+                                        modifier = Modifier
+                                            .padding(end = 12.dp)
+                                            .slider(
+                                                onSlide = {},
+                                                onEnd = {
+                                                    if (it) {
+                                                        Player.removeTrackAt(trackIndex)
+                                                    }
+                                                },
+                                                threshold = 500f,
+                                                color = TitleColor
+                                            )
+                                            .clickable(
+                                                indication = null,
+                                                interactionSource = null,
+                                                onClick = {
+                                                    Player.seekToMediaItem(trackIndex)
+                                                }),
+                                        text = trackQueue[trackIndex].name,
+                                        fontSize = 28.sp,
+                                        fontFamily = ViaodaLibre,
+                                        color = TitleColor,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                } else {
+                                    Text(
+                                        modifier = Modifier
+                                            .padding(end = 12.dp)
+                                            .slider(
+                                                onSlide = {},
+                                                onEnd = {
+                                                    println("Before : index = $trackIndex")
+                                                    trackQueue.forEach { println(" ${it.name}") }
+                                                    if (it) {
+                                                        Player.removeTrackAt(trackIndex)
+                                                    }
+
+                                                },
+                                                threshold = 500f,
+                                                color = variantColor
+                                            )
+                                            .clickable(
+                                                indication = null,
+                                                interactionSource = null,
+                                                onClick = {
+                                                    Player.seekToMediaItem(trackIndex)
+                                                }),
+                                        text = trackQueue[trackIndex].name,
+                                        fontSize = 20.sp,
+                                        fontFamily = UncutSans,
+                                        color = variantColor,
+                                        fontWeight = FontWeight.SemiBold
+                                    )
+                                }
+
+                                Spacer(modifier = Modifier.height(12.dp))
+                                HorizontalDivider()
+                            }
+                            item { Spacer(modifier = Modifier.height(120.dp)) }
+                        }
+
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .fillMaxHeight()
+                                .background(
+                                    brush = Brush.verticalGradient(
+                                        listOf(
+                                            Color.Transparent,
+                                            Color.Transparent,
+                                            Color.Transparent,
+                                            Color.Transparent,
+                                            surfaceColor
                                         )
-                                        .clickable(
-                                            indication = null,
-                                            interactionSource = null,
-                                            onClick = {
-                                                Player.seekToMediaItem(trackIndex)
-                                            }),
-                                    text = trackQueue[trackIndex].name,
-                                    fontSize = 28.sp,
-                                    fontFamily = ViaodaLibre,
-                                    color = TitleColor,
-                                    fontWeight = FontWeight.Bold
+                                    )
                                 )
-                            } else {
-                                Text(
-                                    modifier = Modifier
-                                        .padding(end = 12.dp)
-                                        .slider(
-                                            onSlide = {},
-                                            onEnd = {
-                                                println("Before : index = $trackIndex")
-                                                trackQueue.forEach { println(" ${it.name}") }
-                                                if (it) {
-                                                    Player.removeTrackAt(trackIndex)
-                                                }
+                        )
+                    }
+                }
 
-                                            },
-                                            threshold = 500f,
-                                            color = variantColor
-                                        )
-                                        .clickable(
-                                            indication = null,
-                                            interactionSource = null,
-                                            onClick = {
-                                                Player.seekToMediaItem(trackIndex)
-                                            }),
-                                    text = trackQueue[trackIndex].name,
-                                    fontSize = 20.sp,
-                                    fontFamily = UncutSans,
-                                    color = variantColor,
-                                    fontWeight = FontWeight.SemiBold
+                // QUEUE
+                LinearWavyProgressIndicator(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .seeker(
+                            progress,
+                            seekOut = {
+                                seekProgress = it
+                                seekProgressText = Player.getSeekProgressToProgressText(it)
+                            },
+                            onStart = {
+                                seekProgress = progress
+                                seekProgressText = progressText
+                                seeking = true
+                            },
+                            onEnd = {
+                                Player.seekToProgress(seekProgress)
+                                seeking = false
+                            }
+                        ),
+                    progress = {
+                        if (seeking) seekProgress else animatedProgress.value
+                    },
+                    amplitude = { 0.8f },
+                    trackColor = surfaceHighColor,
+                    stroke = Stroke(width = 20f, cap = StrokeCap.Round),
+                    color = TitleColor,
+                    waveSpeed = 12.dp
+                )
+
+                Text(
+                    modifier = Modifier
+                        .align(Alignment.End)
+                        .padding(end = 12.dp),
+                    text = if (seeking) seekProgressText else progressText,
+                    fontSize = 18.sp,
+                    fontFamily = UncutSans,
+                    color = variantHighColor,
+                    fontWeight = FontWeight.Bold
+                )
+
+                Spacer(modifier = Modifier.height(12.dp - animAdaptiveTextSizeChange.value.dp))
+
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 48.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    PreviousIcon(
+                        modifier = Modifier.clickable(
+                            interactionSource = null,
+                            indication = null,
+                            onClick = {
+                                Player.onPrevious()
+                            }),
+                        size = 72 - animAdaptiveTextSizeChange.value
+                    )
+
+                    AnimatedContent(playerState) { it ->
+                        when (it) {
+
+                            PlayerStates.PLAYING -> {
+                                PlayIcon(
+                                    modifier = Modifier.clickable(
+                                        indication = null,
+                                        interactionSource = null,
+                                        onClick = {
+                                            Player.pause()
+                                        }),
+                                    size = 64 - animAdaptiveTextSizeChange.value,
+                                    spacing = 8.dp
                                 )
                             }
 
-                            Spacer(modifier = Modifier.height(12.dp))
-                            HorizontalDivider()
-                        }
-                        item { Spacer(modifier = Modifier.height(120.dp)) }
-                    }
-
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .fillMaxHeight()
-                            .background(
-                                brush = Brush.verticalGradient(
-                                    listOf(
-                                        Color.Transparent,
-                                        Color.Transparent,
-                                        Color.Transparent,
-                                        Color.Transparent,
-                                        surfaceColor
-                                    )
+                            else -> {
+                                PauseIcon(
+                                    modifier = Modifier.clickable(
+                                        indication = null,
+                                        interactionSource = null,
+                                        onClick = {
+                                            Player.play()
+                                        }),
+                                    size = 74 - animAdaptiveTextSizeChange.value
                                 )
-                            )
+                            }
+                        }
+                    }
+                    // PauseIcon(size = 64)
+
+                    NextIcon(
+                        modifier = Modifier.clickable(
+                            interactionSource = null,
+                            indication = null,
+                            onClick = {
+                                Player.onNext()
+                            }),
+                        size = 72 - animAdaptiveTextSizeChange.value
                     )
                 }
-            }
 
-            // QUEUE
-            LinearWavyProgressIndicator(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .seeker(
-                        progress,
-                        seekOut = {
-                            seekProgress = it
-                            seekProgressText = Player.getSeekProgressToProgressText(it)
-                        },
-                        onStart = {
-                            seekProgress = progress
-                            seekProgressText = progressText
-                            seeking = true
-                        },
-                        onEnd = {
-                            Player.seekToProgress(seekProgress)
-                            seeking = false
-                        }
-                    ),
-                progress = {
-                    if (seeking) seekProgress else animatedProgress.value
-                },
-                amplitude = { 0.8f },
-                trackColor = surfaceHighColor,
-                stroke = Stroke(width = 20f, cap = StrokeCap.Round),
-                color = TitleColor,
-                waveSpeed = 12.dp
-            )
 
-            Text(
-                modifier = Modifier
-                    .align(Alignment.End)
-                    .padding(end = 12.dp),
-                text = if (seeking) seekProgressText else progressText,
-                fontSize = 18.sp,
-                fontFamily = UncutSans,
-                color = variantHighColor,
-                fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(12.dp - animAdaptiveTextSizeChange.value.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 48.dp),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                PreviousIcon(
-                    modifier = Modifier.clickable(
-                        interactionSource = null,
-                        indication = null,
-                        onClick = {
-                            Player.onPrevious()
-                        }),
-                    size = 72 - animAdaptiveTextSizeChange.value
-                )
-
-                AnimatedContent(playerState) { it ->
-                    when (it) {
-
-                        PlayerStates.PLAYING -> {
-                            PlayIcon(
-                                modifier = Modifier.clickable(
-                                    indication = null,
-                                    interactionSource = null,
-                                    onClick = {
-                                        Player.pause()
-                                    }),
-                                size = 64 - animAdaptiveTextSizeChange.value,
-                                spacing = 8.dp
-                            )
-                        }
-
-                        else -> {
-                            PauseIcon(
-                                modifier = Modifier.clickable(
-                                    indication = null,
-                                    interactionSource = null,
-                                    onClick = {
-                                        Player.play()
-                                    }),
-                                size = 74 - animAdaptiveTextSizeChange.value
-                            )
-                        }
-                    }
-                }
-                // PauseIcon(size = 64)
-
-                NextIcon(
-                    modifier = Modifier.clickable(
-                        interactionSource = null,
-                        indication = null,
-                        onClick = {
-                            Player.onNext()
-                        }),
-                    size = 72 - animAdaptiveTextSizeChange.value
-                )
-            }
-
-            AnimatedVisibility(playerFullViewState == PlayerFullViewState.PLAYING) {
                 Row(
                     modifier = Modifier
                         .padding(horizontal = 32.dp)
                         .fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    Text(
-                        modifier = Modifier.clickable(
-                            indication = null,
-                            interactionSource = null,
-                            onClick = {
-                                NavManager.changePlayerViewState(PlayerFullViewState.LYRICS)
-                            }),
+
+                    ThickenText(
+                        modifier = Modifier
+                            .width(110.dp)
+                            .clickable(
+                                indication = null,
+                                interactionSource = null,
+                                onClick = {
+                                    if (playerFullViewState == PlayerFullViewState.LYRICS) {
+                                        NavManager.changePlayerViewState(PlayerFullViewState.PLAYING)
+                                    } else {
+                                        NavManager.changePlayerViewState(PlayerFullViewState.LYRICS)
+                                    }
+                                }),
                         text = "Lyrics",
-                        fontSize = 28.sp,
-                        color = TitleColor,
-                        fontWeight = FontWeight.Normal,
-                        fontFamily = ViaodaLibre
+                        baseStyle = TextStyle(
+                            fontFamily = ViaodaLibre,
+                            color = TitleColor,
+                            fontSize = 28.sp
+                        ),
+                        selected = playerFullViewState == PlayerFullViewState.LYRICS
                     )
-                    Text(
-                        modifier = Modifier.clickable(
-                            indication = null,
-                            interactionSource = null,
-                            onClick = {
-                                NavManager.changePlayerViewState(PlayerFullViewState.QUEUE)
-                            }),
+
+                    ThickenText(
+                        modifier = Modifier
+                            .width(110.dp)
+                            .clickable(
+                                indication = null,
+                                interactionSource = null,
+                                onClick = {
+                                    if (playerFullViewState == PlayerFullViewState.QUEUE) {
+                                        NavManager.changePlayerViewState(PlayerFullViewState.PLAYING)
+                                    } else {
+                                        NavManager.changePlayerViewState(PlayerFullViewState.QUEUE)
+                                    }
+                                }),
                         text = "Queue",
-                        fontSize = 28.sp,
-                        color = TitleColor,
-                        fontWeight = FontWeight.Normal,
-                        fontFamily = ViaodaLibre
+                        baseStyle = TextStyle(
+                            fontFamily = ViaodaLibre,
+                            color = TitleColor,
+                            fontSize = 28.sp
+                        ),
+                        selected = playerFullViewState == PlayerFullViewState.QUEUE
                     )
                 }
+//            }
             }
         }
 

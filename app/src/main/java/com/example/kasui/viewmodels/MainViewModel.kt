@@ -49,6 +49,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     var dbAlbums: StateFlow<List<Album>>
     var dbTracks: StateFlow<List<Track>>
 
+
     val loginCoroutine = CoroutineScope(Dispatchers.IO)
 
     init {
@@ -94,6 +95,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
 
             albumRepo.addTracks(tagged)
 
+        }
+    }
+
+    fun refetch() {
+        viewModelScope.launch {
+            MediaManager.fetchMusicFiles(application.applicationContext, force = true)
         }
     }
 

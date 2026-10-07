@@ -1,11 +1,15 @@
 package com.example.kasui.Presentation
 
 import android.os.Build
+import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
 import androidx.annotation.RequiresExtension
 import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
@@ -22,9 +26,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.NavHost
@@ -76,6 +84,31 @@ fun NavScreen(
     val currentTrack by playerViewModel.currentTrack.collectAsStateWithLifecycle()
 
     val bottomBarVisible by NavManager.bottomBarVisible.collectAsStateWithLifecycle()
+
+    // hide status bar
+    val view = LocalView.current
+    LaunchedEffect(playerFullViewState, navState) {
+        if (playerFullViewState == PlayerFullViewState.LYRICS && navState.navRoute == NavRoutes.PlayerView().route) {
+            val window = (view.context as ComponentActivity).window
+
+            // 3. Initialize the Insets Controller
+            val insetsController = WindowCompat.getInsetsController(window, view)
+
+            // 4. Hide the status bar (notification bar)
+            insetsController.hide(WindowInsetsCompat.Type.statusBars())
+
+            insetsController.systemBarsBehavior =
+                WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        } else {
+            val window = (view.context as ComponentActivity).window
+
+            // 3. Initialize the Insets Controller
+            val insetsController = WindowCompat.getInsetsController(window, view)
+
+            // 4. Hide the status bar (notification bar)
+            insetsController.show(WindowInsetsCompat.Type.statusBars())
+        }
+    }
 
     LaunchedEffect(navState, currentTrack) {
         NavManager.setMiniPlayerView(navState.navRoute != PlayerView().route && currentTrack != null)
@@ -257,7 +290,15 @@ fun NavScreen(
                 modifier = Modifier
                     .align(Alignment.BottomCenter)
                     .padding(horizontal = 24.dp, vertical = 16.dp),
-                visible = bottomBarVisible
+                visible = bottomBarVisible,
+                enter = fadeIn(tween(durationMillis = 500, easing = LinearEasing)),
+                exit = fadeOut(
+                    tween(
+                        durationMillis = 500,
+                        delayMillis = 500,
+                        easing = LinearEasing
+                    )
+                )
             ) {
                 BottomBar(
                     welcomeViewmodel = welcomeViewmodel,

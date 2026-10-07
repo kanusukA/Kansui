@@ -159,8 +159,9 @@ object MediaManager {
     }
 
 
-    suspend fun fetchMusicFiles(context: Context) {
-        val tracks = albumRepository!!.getAllTracksNow()
+    suspend fun fetchMusicFiles(context: Context, force: Boolean = false) {
+
+        val tracks = if (force) emptyList() else albumRepository!!.getAllTracksNow()
 
         val uri = MediaStore.Audio.Media.EXTERNAL_CONTENT_URI
         _mediaState.update { MediaManagerState.LOADING_RAW }

@@ -18,6 +18,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.runBlocking
 import kotlin.time.Duration.Companion.milliseconds
 
 object PlayerListener : Player.Listener {
@@ -79,7 +80,7 @@ object Player {
 
     val progressMs: Flow<Long> = flow {
         while (true) {
-            exoPlayer.value?.currentPosition ?: 0L
+            emit(exoPlayer.value?.currentPosition ?: 0L)
             delay(500.milliseconds)
         }
     }

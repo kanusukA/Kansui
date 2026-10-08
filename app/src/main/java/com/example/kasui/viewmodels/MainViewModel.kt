@@ -72,7 +72,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
     }
 
     fun initMain(context: Context) {
-        Player.initPlayer(context)
         MediaManager.initRepo(context)
 
         syncMusicFiles()
@@ -132,13 +131,6 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
 
     }
-
-//    fun loadArtwork(artwork: Artwork){
-//        if (artwork.bitmap == null && artwork.uri != null){
-//            artwork.bitmap = fetchArtworkFromTrackUri(artwork.uri!!)
-//        }
-//        return artwork.bitmap
-//    }
 
 
 }

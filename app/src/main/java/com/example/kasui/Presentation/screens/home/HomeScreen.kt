@@ -29,6 +29,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.example.kasui.Presentation.components.albumCard.AlbumCard
 import com.example.kasui.Presentation.components.albumCard.SelectionAlbumCard
 import com.example.kasui.viewmodels.HomeViewModel
+import com.example.kasui.viewmodels.Player
 
 @Composable
 fun HomeScreen(
@@ -39,6 +40,7 @@ fun HomeScreen(
     val lazyState: LazyStaggeredGridState = rememberLazyStaggeredGridState()
 
     val albumList by homeViewModel.albumsList.collectAsStateWithLifecycle()
+
 
     val selectedAlbums = remember {
         mutableStateListOf<Int>()

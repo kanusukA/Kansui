@@ -64,10 +64,12 @@ import com.example.kasui.ui.ViaodaLibre
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.ui.textColor
 import com.example.kasui.viewmodels.Player
+import com.example.kasui.viewmodels.PlayerViewModel
 
 @Composable
 fun AlbumScreen(
     album: Album,
+    playerViewModel: PlayerViewModel,
     onAlbumScreenState: (AlbumScreenState) -> Unit
 ) {
 
@@ -234,8 +236,6 @@ fun AlbumScreen(
         )
 
 
-
-
         LazyColumn(
             modifier = Modifier
                 .padding(horizontal = 12.dp),
@@ -253,12 +253,13 @@ fun AlbumScreen(
                         indication = null,
                         interactionSource = null,
                         onClick = {
-                            Player.clearQueue()
+                            playerViewModel.clearQueue()
 
                             for (idx in index..<tracks.size) {
-                                Player.addTrackToQueue(tracks[idx])
+
+                                playerViewModel.addTrackToQueue(tracks[idx])
                             }
-                            Player.prepare()
+                            playerViewModel.prepare()
                         }),
                     text = (tracks[index].trackNumber?.toString() ?: "") + " " + tracks[index].name,
                     fontFamily = UncutSans,

@@ -1,5 +1,6 @@
 package com.example.kasui.Presentation
 
+import android.content.ComponentName
 import android.os.Build
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -16,6 +17,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,6 +27,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.platform.LocalWindowInfo
@@ -35,6 +38,8 @@ import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.media3.session.MediaController
+import androidx.media3.session.SessionToken
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -49,9 +54,11 @@ import com.example.kasui.Presentation.screens.home.WelcomeScreen
 import com.example.kasui.ui.TitleColor
 import com.example.kasui.ui.surfaceColor
 import com.example.kasui.viewmodels.MainViewModel
+import com.example.kasui.viewmodels.Player
 import com.example.kasui.viewmodels.PlayerViewModel
 import com.example.kasui.viewmodels.TopBarViewModel
 import com.example.kasui.viewmodels.WelcomeViewmodel
+import com.google.common.util.concurrent.MoreExecutors
 
 @RequiresExtension(extension = Build.VERSION_CODES.TIRAMISU, version = 15)
 @Composable
@@ -59,11 +66,34 @@ fun NavScreen(
     mainViewModel: MainViewModel
 ) {
 
-    val navController = rememberNavController()
+    val context = LocalContext.current
 
     val playerViewModel: PlayerViewModel = viewModel {
         PlayerViewModel(mainViewModel)
     }
+
+    // player
+
+
+    DisposableEffect(Unit) {
+        val sessionToken = SessionToken(context, ComponentName(context, Player::class.java))
+        val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
+
+        controllerFuture.addListener(
+            {
+                playerViewModel.playerController = controllerFuture.get()
+            },
+            MoreExecutors.directExecutor()
+        )
+
+        onDispose {
+            MediaController.releaseFuture(controllerFuture)
+        }
+
+    }
+
+    val navController = rememberNavController()
+
 
     val topBarViewModel: TopBarViewModel = viewModel() {
         TopBarViewModel(playerViewModel)
@@ -222,7 +252,7 @@ fun NavScreen(
                         }
                     }
                     // Reconstruct the typed object from the back stack entry
-                    AlbumScreen(selectedAlbum!!, {})
+                    AlbumScreen(selectedAlbum!!, playerViewModel, {})
                 }
 
                 composable(route = NavRoutes.Search().route) {

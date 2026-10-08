@@ -33,6 +33,7 @@ import com.example.kasui.Data.structure.song.SongAttributes
 import com.example.kasui.Data.structure.song.SongRelationships
 import com.example.kasui.Data.structure.song.Track
 import com.example.kasui.TagLib
+import com.example.kasui.viewmodels.Player
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay

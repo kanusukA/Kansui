@@ -128,15 +128,6 @@ fun WelcomeScreen(
 
             }
 
-//            Spacer(modifier = Modifier.height(34.dp))
-//
-//            Row(
-//                modifier = Modifier.width(240.dp),
-//                horizontalArrangement = Arrangement.SpaceBetween
-//            ) {
-//
-//            }
-
         }
     }
 

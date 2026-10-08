@@ -81,6 +81,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 
 import coil3.compose.AsyncImage
+import com.example.kasui.Data.request.MediaManager
 import com.example.kasui.Presentation.NavManager
 import com.example.kasui.Presentation.NavRoutes
 import com.example.kasui.Presentation.PlayerFullViewState
@@ -118,8 +119,8 @@ fun PlayerView(
     val currentTrack by playerViewModel.currentTrack.collectAsStateWithLifecycle()
     val currentAlbum by playerViewModel.currentAlbum.collectAsStateWithLifecycle()
 
-    val progress by Player.progress.collectAsStateWithLifecycle(0f)
-    val progressText by Player.ProgressText.collectAsStateWithLifecycle("0:00")
+    val progress by playerViewModel.progress.collectAsStateWithLifecycle(0f)
+    val progressText by playerViewModel.ProgressText.collectAsStateWithLifecycle("0:00")
 
     val animatedProgress = animateFloatAsState(progress)
 
@@ -244,8 +245,8 @@ fun PlayerView(
                         trigger = { trigger = it },
                         onTrigger = {
                             when (it) {
-                                Trigger.LEFT -> Player.onPrevious()
-                                Trigger.RIGHT -> Player.onNext()
+                                Trigger.LEFT -> playerViewModel.onPrevious()
+                                Trigger.RIGHT -> playerViewModel.onNext()
                             }
                         },
                         triggerThreshold = 50.dp
@@ -288,7 +289,7 @@ fun PlayerView(
                                 indication = null,
                                 interactionSource = null,
                                 onClick = {
-                                    Player.pause()
+                                    playerViewModel.pause()
                                 }),
                             size = 40,
                             size2 = 40,
@@ -302,7 +303,7 @@ fun PlayerView(
                                 indication = null,
                                 interactionSource = null,
                                 onClick = {
-                                    Player.play()
+                                    playerViewModel.play()
                                 }),
                             size = 48
                         )
@@ -331,12 +332,12 @@ fun PlayerFullView(
 
     val playerFullViewState by NavManager.playerViewState.collectAsStateWithLifecycle()
 
-    val player by Player.exoPlayer.collectAsStateWithLifecycle()
+//    val player by playerViewModel.exoPlayer.collectAsStateWithLifecycle()
 
     // PROGRESS AND SEEK
-    val progress by Player.progress.collectAsStateWithLifecycle(0f)
-    val progressMs by Player.progressMs.collectAsStateWithLifecycle(0L)
-    val progressText by Player.ProgressText.collectAsStateWithLifecycle("")
+    val progress by playerViewModel.progress.collectAsStateWithLifecycle(0f)
+    val progressMs by playerViewModel.progressMs.collectAsStateWithLifecycle(0L)
+    val progressText by playerViewModel.ProgressText.collectAsStateWithLifecycle("")
     var seeking by remember {
         mutableStateOf(false)
     }
@@ -405,7 +406,12 @@ fun PlayerFullView(
     LaunchedEffect(progressMs) {
         if (currentTrack != null && currentTrack!!.lyricsSynced.isNotEmpty()) {
             val nextIndex =
-                currentTrack!!.lyricsSynced.indexOfFirst { it.timestamp > progressMs }
+                currentTrack!!.lyricsSynced.indexOfFirst {
+                    (it.timestamp - 600).coerceIn(
+                        0,
+                        Long.MAX_VALUE
+                    ) > progressMs
+                }
             if (nextIndex > 0) {
                 currentLyricIndex = nextIndex - 1
 
@@ -415,6 +421,7 @@ fun PlayerFullView(
 
     LaunchedEffect(currentLyricIndex) {
 //        println("LYRIC CHANGED : ${currentLyricIndex}")
+
         lyricLazyState.animateScrollToItem(
             currentLyricIndex,
             scrollOffset = -(screenHeight.value.toInt() / 2)
@@ -435,7 +442,7 @@ fun PlayerFullView(
     }
 
     LaunchedEffect(Unit, currentTrack) {
-        currentTrackIndex = player?.currentMediaItemIndex ?: 0
+        currentTrackIndex = playerViewModel.currentMediaItemIndex() ?: 0
 //        lyricLazyState.animateScrollToItem(0, scrollOffset = -(screenHeight.value.toInt() / 2))
         currentLyricIndex = 0
 
@@ -481,18 +488,25 @@ fun PlayerFullView(
 
                         var scale by remember { mutableFloatStateOf(0.5f) }
 
+                        val animScale = animateFloatAsState(
+                            scale,
+                            tween(durationMillis = 600, delayMillis = 100)
+                        )
+
                         LaunchedEffect(currentLyricIndex, Unit) {
 
                             if (currentLyricIndex == index) {
-                                scale = 1.3f
+                                scale = 1f
+                            } else if (index < currentLyricIndex) {
+                                scale = 0.35f
                             } else {
                                 val offset = 1.25f - ((abs(currentLyricIndex - index).coerceIn(
                                     1,
                                     (currentTrack!!.lyricsSynced.size - 1)
                                 ).toFloat()
-                                        ) / (currentTrack!!.lyricsSynced.size / 4))
+                                        ) / (currentTrack!!.lyricsSynced.size / 8))
 
-                                scale = offset.coerceIn(0.45f, 1.25f)
+                                scale = offset.coerceIn(0.35f, 1.25f)
                             }
 
 
@@ -509,16 +523,17 @@ fun PlayerFullView(
 
                         ThickenText(
                             modifier = Modifier
-                                .alpha(scale.coerceIn(0f, 1f)),
+                                .alpha(animScale.value),
                             text = lyric.text,
-                            selected = currentLyricIndex == index,
+                            selected = false,
                             baseStyle = TextStyle(
-                                fontSize = 24.sp,
+                                fontSize = 28.sp,
                                 fontFamily = ViaodaLibre,
-                                color = TitleDarkColor
+                                color = TitleDarkColor,
+                                fontWeight = FontWeight.Black
                             ),
                             colorAnim = if (currentLyricIndex == index) TitleColor else TitleDarkColor,
-                            scale = scale
+                            scale = 1.0f
 
                         )
                         Spacer(
@@ -614,7 +629,7 @@ fun PlayerFullView(
                                                 onSlide = {},
                                                 onEnd = {
                                                     if (it) {
-                                                        Player.removeTrackAt(trackIndex)
+                                                        playerViewModel.removeTrackAt(trackIndex)
                                                     }
                                                 },
                                                 threshold = 500f,
@@ -624,7 +639,7 @@ fun PlayerFullView(
                                                 indication = null,
                                                 interactionSource = null,
                                                 onClick = {
-                                                    Player.seekToMediaItem(trackIndex)
+                                                    playerViewModel.seekToMediaItem(trackIndex)
                                                 }),
                                         text = trackQueue[trackIndex].name,
                                         fontSize = 28.sp,
@@ -642,7 +657,7 @@ fun PlayerFullView(
                                                     println("Before : index = $trackIndex")
                                                     trackQueue.forEach { println(" ${it.name}") }
                                                     if (it) {
-                                                        Player.removeTrackAt(trackIndex)
+                                                        playerViewModel.removeTrackAt(trackIndex)
                                                     }
 
                                                 },
@@ -653,7 +668,7 @@ fun PlayerFullView(
                                                 indication = null,
                                                 interactionSource = null,
                                                 onClick = {
-                                                    Player.seekToMediaItem(trackIndex)
+                                                    playerViewModel.seekToMediaItem(trackIndex)
                                                 }),
                                         text = trackQueue[trackIndex].name,
                                         fontSize = 20.sp,
@@ -696,7 +711,8 @@ fun PlayerFullView(
                             progress,
                             seekOut = {
                                 seekProgress = it
-                                seekProgressText = Player.getSeekProgressToProgressText(it)
+                                seekProgressText =
+                                    playerViewModel.getSeekProgressToProgressText(it)
                             },
                             onStart = {
                                 seekProgress = progress
@@ -704,7 +720,7 @@ fun PlayerFullView(
                                 seeking = true
                             },
                             onEnd = {
-                                Player.seekToProgress(seekProgress)
+                                playerViewModel.seekToProgress(seekProgress)
                                 seeking = false
                             }
                         ),
@@ -743,7 +759,7 @@ fun PlayerFullView(
                             interactionSource = null,
                             indication = null,
                             onClick = {
-                                Player.onPrevious()
+                                playerViewModel.onPrevious()
                             }),
                         size = 72 - animAdaptiveTextSizeChange.value
                     )
@@ -757,7 +773,7 @@ fun PlayerFullView(
                                         indication = null,
                                         interactionSource = null,
                                         onClick = {
-                                            Player.pause()
+                                            playerViewModel.pause()
                                         }),
                                     size = 64 - animAdaptiveTextSizeChange.value,
                                     spacing = 8.dp
@@ -770,7 +786,7 @@ fun PlayerFullView(
                                         indication = null,
                                         interactionSource = null,
                                         onClick = {
-                                            Player.play()
+                                            playerViewModel.play()
                                         }),
                                     size = 74 - animAdaptiveTextSizeChange.value
                                 )
@@ -784,7 +800,7 @@ fun PlayerFullView(
                             interactionSource = null,
                             indication = null,
                             onClick = {
-                                Player.onNext()
+                                playerViewModel.onNext()
                             }),
                         size = 72 - animAdaptiveTextSizeChange.value
                     )

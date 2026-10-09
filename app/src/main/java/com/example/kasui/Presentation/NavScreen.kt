@@ -20,6 +20,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -308,7 +309,8 @@ fun NavScreen(
 
 
             topBottomGradient(
-                intensityTop = animTopGradientIntensity.value
+                intensityTop = animTopGradientIntensity.value,
+                enableBottom = playerFullViewState != PlayerFullViewState.LYRICS
             )
 
             TopBar(
@@ -356,12 +358,26 @@ fun NavScreen(
 @Composable
 private fun topBottomGradient(
     intensityTop: Float = 1f,
-    intensityBottom: Float = 1f
+    intensityBottom: Float = 1f,
+    enableTop: Boolean = true,
+    enableBottom: Boolean = true
 ) {
     val configuration = LocalWindowInfo.current.containerDpSize
     val density = LocalDensity.current
 
     val screenHeightDpFloat = with(density) { configuration.height.toPx() }
+
+    val alphaTop by remember(enableTop) {
+        mutableFloatStateOf(if (enableTop) 0.75f else 0f)
+    }
+
+    val animAlphaTop = animateFloatAsState(alphaTop)
+
+    val alphaBottom by remember(enableBottom) {
+        mutableFloatStateOf(if (enableBottom) 0.65f else 0f)
+    }
+
+    val animAlphaBottom = animateFloatAsState(alphaBottom)
 
 
     Box(
@@ -369,7 +385,10 @@ private fun topBottomGradient(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    listOf(TitleColor.copy(alpha = 0.75f * intensityTop), Color.Transparent),
+                    listOf(
+                        TitleColor.copy(alpha = animAlphaTop.value * intensityTop),
+                        Color.Transparent
+                    ),
                     endY = screenHeightDpFloat * 0.15f
                 )
             )
@@ -379,7 +398,10 @@ private fun topBottomGradient(
             .fillMaxSize()
             .background(
                 brush = Brush.verticalGradient(
-                    listOf(Color.Transparent, TitleColor.copy(alpha = 0.65f * intensityBottom)),
+                    listOf(
+                        Color.Transparent,
+                        TitleColor.copy(alpha = animAlphaBottom.value * intensityBottom)
+                    ),
                     startY = screenHeightDpFloat * 0.9f
                 )
             )

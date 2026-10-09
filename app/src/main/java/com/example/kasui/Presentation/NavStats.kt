@@ -97,6 +97,9 @@ object NavManager {
     val animPlayerFadeEnterTween = tween<EnterTransition>(durationMillis = 300, delayMillis = 0)
     val animPlayerFadeExitTween = tween<ExitTransition>(durationMillis = 600, delayMillis = 2000)
 
+    private var _darkMode = MutableStateFlow(false)
+    val darkMode = _darkMode.asStateFlow()
+
     fun setPlayerLyricsFadeUi(fade: Boolean) {
         _playerLyricsFadeUi.update { fade }
     }
@@ -111,6 +114,7 @@ object NavManager {
             _bottomBarVisible.update { true }
         }
         _navStates.update { state }
+        _darkMode.update { (state.navRoute == NavRoutes.PlayerView().route && playerViewState.value == PlayerFullViewState.LYRICS) }
     }
 
     fun goBack(previousRoute: String) {
@@ -166,6 +170,9 @@ object NavManager {
     fun changePlayerViewState(state: PlayerFullViewState) {
         _playerViewState.update { state }
         _bottomBarVisible.update { state == PlayerFullViewState.PLAYING }
+
+        _darkMode.update { state == PlayerFullViewState.LYRICS }
+
     }
 
 //    fun playTrack(track: Track) {

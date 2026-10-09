@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -129,6 +130,17 @@ fun TopBar(
         }
     }
 
+    val subTextOffset by remember(playerFullViewState, navState) {
+        mutableStateOf(
+            if (playerFullViewState == PlayerFullViewState.LYRICS) {
+                -24.dp
+            } else {
+                -32.dp
+            }
+
+        )
+    }
+
 
     LaunchedEffect(navState, mediaState, playerFullViewState, playingTrack) {
         when (navState) {
@@ -224,7 +236,7 @@ fun TopBar(
                         subHeading = playingTrack?.albumName ?: ""
                         subSubHeading = playingTrack?.artistName ?: ""
                         fontSizeScale = 40f
-                        TopPadding = 20.dp
+                        TopPadding = 10.dp
                         subFontSizeScale = 28f
                         NavManager.setTopBarVisibility(true)
                     }
@@ -232,7 +244,7 @@ fun TopBar(
                     else -> {
                         headingText = playingTrack?.name ?: ""
                         subHeading = playingTrack?.albumName ?: ""
-                        TopPadding = 420.dp
+                        TopPadding = 380.dp
                         fontSizeScale = 64f
                         subFontSizeScale = 32f
                         subSubHeading = playingTrack?.artistName ?: ""
@@ -311,7 +323,15 @@ fun TopBar(
                         textMotion = TextMotion.Animated,
                         fontSize = animatedFontSizeScale.value.sp,
                         color = animatedVisibility.value,
-                        lineHeight = 52.sp
+                        lineHeight = (animatedFontSizeScale.value - (animatedFontSizeScale.value * 0.35f)).coerceIn(
+                            48f,
+                            68f
+                        ).sp
+                    ),
+                    maxLines = 2,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 16.sp,
+                        maxFontSize = 85.sp
                     )
                 )
             } else {
@@ -372,7 +392,7 @@ fun TopBar(
 
         // ALBUM SUBTEXT
         AnimatedVisibility(
-            modifier = Modifier.offset(y = -32.dp),
+            modifier = Modifier.offset(y = subTextOffset),
             visible = navState.navRoute == NavRoutes.Album().route || navState.navRoute == NavRoutes.PlayerView().route
         ) {
             Text(
@@ -391,7 +411,7 @@ fun TopBar(
         }
 
         AnimatedVisibility(
-            modifier = Modifier.offset(y = -48.dp),
+            modifier = Modifier.offset(y = subTextOffset - 18.dp),
             visible = navState.navRoute == NavRoutes.PlayerView().route
         ) {
             Text(

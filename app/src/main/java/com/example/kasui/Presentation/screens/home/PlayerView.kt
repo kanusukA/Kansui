@@ -7,6 +7,8 @@ import android.text.style.BackgroundColorSpan
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.EaseInSine
+import androidx.compose.animation.core.EaseOutQuart
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.animation.core.animateFloatAsState
@@ -19,6 +21,7 @@ import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.gestures.detectHorizontalDragGestures
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.layout.Arrangement
@@ -40,6 +43,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.TextAutoSize
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.LinearWavyProgressIndicator
 import androidx.compose.material3.Text
@@ -49,6 +53,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -63,6 +68,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.TileMode
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onGloballyPositioned
@@ -73,6 +79,7 @@ import androidx.compose.ui.platform.LocalWindowInfo
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.LineHeightStyle
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -107,6 +114,26 @@ import com.example.kasui.viewmodels.PlayerViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.abs
 import kotlin.time.Duration.Companion.milliseconds
+
+
+// Scroll animation problem:
+// The default animateScrollTo(index) function provides migraine inducing visuals, not to mention the complexity of the function under the hood.
+// The function provided by android can only work with the items that are currently visible on the display and has to find the items that are offscreen.
+
+// To solve this problem two approaches can be implemented :
+// 1) Animate Scroll To only next item:
+//      A fixed scroll to the next item can be made with custom animation.
+//      Not only this approach provides good animation but also follows the android principle while being the most performative
+//      But this method fails to animate to items more than one step far from the current selection.
+// 2) Get Default Item Offset and animate by it:
+//      we can calculate the height of single item and offset by it to our desired position.
+//      But this approach can't be used with items that change size (height)
+//
+// But you may have noticed either way a static height or a known range of it is to be known,
+// this becomes tricky as our LazyScroll lists text which can be multiline, so their heights can differ
+// It is also very difficult to know whether the text is going to be single line or multiline without rendering it first.
+// using text autoSize make it look even worse.
+
 
 @Composable
 fun PlayerView(
@@ -171,6 +198,7 @@ fun PlayerView(
                 )
             })
     ) {
+
         Text(
             modifier = Modifier
                 .align(Alignment.BottomEnd)
@@ -236,7 +264,6 @@ fun PlayerView(
                 contentDescription = "Album Cover"
             )
 
-//            Spacer(modifier = Modifier.width(6.dp))
 
             Box(
                 modifier = Modifier
@@ -258,7 +285,12 @@ fun PlayerView(
                     fontFamily = ViaodaLibre,
                     fontSize = 20.sp,
                     fontWeight = FontWeight.ExtraBold,
-                    color = TitleColor
+                    color = TitleColor,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 12.sp,
+                        maxFontSize = 20.sp
+                    )
                 )
                 Text(
                     modifier = Modifier.padding(top = 22.dp),
@@ -266,7 +298,12 @@ fun PlayerView(
                     fontFamily = ViaodaLibre,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
-                    color = TitleColor
+                    color = TitleColor,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 12.sp,
+                        maxFontSize = 14.sp
+                    )
                 )
                 Text(
                     modifier = Modifier.padding(top = 40.dp),
@@ -274,7 +311,12 @@ fun PlayerView(
                     fontFamily = ViaodaLibre,
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Normal,
-                    color = TitleColor
+                    color = TitleColor,
+                    maxLines = 1,
+                    autoSize = TextAutoSize.StepBased(
+                        minFontSize = 12.sp,
+                        maxFontSize = 14.sp
+                    )
                 )
             }
 
@@ -332,8 +374,6 @@ fun PlayerFullView(
 
     val playerFullViewState by NavManager.playerViewState.collectAsStateWithLifecycle()
 
-//    val player by playerViewModel.exoPlayer.collectAsStateWithLifecycle()
-
     // PROGRESS AND SEEK
     val progress by playerViewModel.progress.collectAsStateWithLifecycle(0f)
     val progressMs by playerViewModel.progressMs.collectAsStateWithLifecycle(0L)
@@ -347,7 +387,6 @@ fun PlayerFullView(
     var seekProgressText by remember {
         mutableStateOf("0:00")
     }
-
 
     val animatedProgress =
         animateFloatAsState(if (seeking) seekProgress else progress, animationSpec = tween(400))
@@ -369,8 +408,18 @@ fun PlayerFullView(
             }
         )
     }
+    val darkMode by NavManager.darkMode.collectAsStateWithLifecycle()
+    val bgColor by remember(darkMode) {
+        mutableStateOf(if (darkMode) Color.Black else surfaceColor)
+    }
+    val animBgColor = animateColorAsState(bgColor, tween(durationMillis = 600, delayMillis = 300))
 
-    val screenWidth = LocalWindowInfo.current.containerDpSize.width
+    val textColor by remember(darkMode) {
+        mutableStateOf(if (darkMode) surfaceColor else TitleColor)
+    }
+    val animTextColor =
+        animateColorAsState(textColor, tween(durationMillis = 600, delayMillis = 300))
+
     val screenHeight = LocalWindowInfo.current.containerDpSize.height
 
     val animAlbumTint = animateColorAsState(albumTint)
@@ -419,13 +468,34 @@ fun PlayerFullView(
         }
     }
 
-    LaunchedEffect(currentLyricIndex) {
-//        println("LYRIC CHANGED : ${currentLyricIndex}")
+//    LaunchedEffect(lyricLazyState.isScrollInProgress) {
+//        while (lyricLazyState.isScrollInProgress) {
+//            val current =
+//                lyricLazyState.layoutInfo.visibleItemsInfo.find { it.index == currentLyricIndex }
+//            println("Scroll of third : ${current?.offset}")
+//            delay(300.milliseconds)
+//        }
+//    }
 
-        lyricLazyState.animateScrollToItem(
-            currentLyricIndex,
-            scrollOffset = -(screenHeight.value.toInt() / 2)
-        )
+    LaunchedEffect(currentLyricIndex) {
+
+        // check is scroll item is visible
+        val item = lyricLazyState.layoutInfo.visibleItemsInfo.find { it.index == currentLyricIndex }
+        if (item != null) {
+            val nextItemOffset = item.offset - 300
+            lyricLazyState.animateScrollBy(
+                nextItemOffset.toFloat(), tween(
+                    durationMillis = 200, delayMillis = 50,
+                    EaseOutQuart
+                )
+            )
+
+        } else {
+            lyricLazyState.animateScrollToItem(
+                currentLyricIndex,
+                scrollOffset = -300
+            )
+        }
 
 
     }
@@ -443,10 +513,12 @@ fun PlayerFullView(
 
     LaunchedEffect(Unit, currentTrack) {
         currentTrackIndex = playerViewModel.currentMediaItemIndex() ?: 0
-//        lyricLazyState.animateScrollToItem(0, scrollOffset = -(screenHeight.value.toInt() / 2))
         currentLyricIndex = 0
 
     }
+
+    // NOTE: MUST NOT BE TAMPERED: IT'S TIED TO THE SIZE OF LYRIC ITEM
+
 
     val artwork =
         currentAlbum?.album?.artwork?.getBitmap(LocalContext.current)
@@ -455,7 +527,7 @@ fun PlayerFullView(
     Box(
         Modifier
             .fillMaxSize()
-            .background(color = surfaceColor)
+            .background(color = animBgColor.value)
             .pointerInput(Unit) {
                 detectTapGestures(
                     onTap = {
@@ -532,7 +604,7 @@ fun PlayerFullView(
                                 color = TitleDarkColor,
                                 fontWeight = FontWeight.Black
                             ),
-                            colorAnim = if (currentLyricIndex == index) TitleColor else TitleDarkColor,
+                            colorAnim = if (currentLyricIndex == index) animTextColor.value else TitleDarkColor,
                             scale = 1.0f
 
                         )
@@ -544,12 +616,6 @@ fun PlayerFullView(
                                 ).value
                             )
                         )
-//                        Text(
-//                            text = lyric.text,
-//                            fontSize = 28.sp,
-//                            fontFamily = ViaodaLibre,
-//                            color = TitleDarkColor
-//                        )
                     }
                 } else if (currentTrack != null && currentTrack!!.hasLyrics) {
                     item {
@@ -565,6 +631,23 @@ fun PlayerFullView(
                     Spacer(modifier = Modifier.height(360.dp))
                 }
             }
+
+            // Gradient for Top Text
+            Box(
+                modifier
+                    .fillMaxWidth()
+                    .height(200.dp)
+                    .background(
+                        brush = Brush.verticalGradient(
+                            listOf(
+                                animBgColor.value,
+                                animBgColor.value.copy(alpha = 0.85f),
+                                Color.Transparent
+                            ), tileMode = TileMode.Decal
+                        )
+                    )
+            )
+
         }
 
         AnimatedVisibility(
@@ -645,7 +728,8 @@ fun PlayerFullView(
                                         fontSize = 28.sp,
                                         fontFamily = ViaodaLibre,
                                         color = TitleColor,
-                                        fontWeight = FontWeight.Bold
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.End
                                     )
                                 } else {
                                     Text(
@@ -814,9 +898,8 @@ fun PlayerFullView(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
 
-                    ThickenText(
+                    Text(
                         modifier = Modifier
-                            .width(110.dp)
                             .clickable(
                                 indication = null,
                                 interactionSource = null,
@@ -828,17 +911,15 @@ fun PlayerFullView(
                                     }
                                 }),
                         text = "Lyrics",
-                        baseStyle = TextStyle(
+                        style = TextStyle(
                             fontFamily = ViaodaLibre,
-                            color = TitleColor,
+                            color = if (playerFullViewState == PlayerFullViewState.LYRICS) TitleColor else TitleDarkColor,
                             fontSize = 28.sp
-                        ),
-                        selected = playerFullViewState == PlayerFullViewState.LYRICS
+                        )
                     )
 
-                    ThickenText(
+                    Text(
                         modifier = Modifier
-                            .width(110.dp)
                             .clickable(
                                 indication = null,
                                 interactionSource = null,
@@ -850,12 +931,11 @@ fun PlayerFullView(
                                     }
                                 }),
                         text = "Queue",
-                        baseStyle = TextStyle(
+                        style = TextStyle(
                             fontFamily = ViaodaLibre,
-                            color = TitleColor,
+                            color = if (playerFullViewState == PlayerFullViewState.QUEUE) TitleColor else TitleDarkColor,
                             fontSize = 28.sp
-                        ),
-                        selected = playerFullViewState == PlayerFullViewState.QUEUE
+                        )
                     )
                 }
 //            }

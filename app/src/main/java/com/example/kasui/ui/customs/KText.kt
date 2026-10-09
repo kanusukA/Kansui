@@ -42,6 +42,7 @@ import androidx.compose.ui.text.style.TextMotion
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.example.kasui.R
 import com.example.kasui.ui.ViaodaLibre
 
@@ -53,8 +54,9 @@ fun ThickenText(
     scale: Float = 1f,
     baseStyle: TextStyle,
     colorAnim: Color? = null,
-    duration: Int = 400
-) {
+    duration: Int = 400,
+
+    ) {
     val animatedFloat = remember { Animatable(1f) }
 
     LaunchedEffect(key1 = selected) {
@@ -126,11 +128,10 @@ fun ThickenText(
 //
 //                }
 //            },
-        
         overflow = TextOverflow.Visible,
         text = text,
         style = baseStyle,
-        color = colorFont.value
+        color = colorFont.value,
     )
 
 //    Text(

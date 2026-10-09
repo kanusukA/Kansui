@@ -134,6 +134,8 @@ import kotlin.time.Duration.Companion.milliseconds
 // It is also very difficult to know whether the text is going to be single line or multiline without rendering it first.
 // using text autoSize make it look even worse.
 
+// For now I've implemented a combination of both methods, which seems to work just fine.
+
 
 @Composable
 fun PlayerView(
@@ -468,24 +470,15 @@ fun PlayerFullView(
         }
     }
 
-//    LaunchedEffect(lyricLazyState.isScrollInProgress) {
-//        while (lyricLazyState.isScrollInProgress) {
-//            val current =
-//                lyricLazyState.layoutInfo.visibleItemsInfo.find { it.index == currentLyricIndex }
-//            println("Scroll of third : ${current?.offset}")
-//            delay(300.milliseconds)
-//        }
-//    }
-
     LaunchedEffect(currentLyricIndex) {
 
         // check is scroll item is visible
         val item = lyricLazyState.layoutInfo.visibleItemsInfo.find { it.index == currentLyricIndex }
         if (item != null) {
-            val nextItemOffset = item.offset - 300
+            val nextItemOffset = item.offset - 450
             lyricLazyState.animateScrollBy(
                 nextItemOffset.toFloat(), tween(
-                    durationMillis = 200, delayMillis = 50,
+                    durationMillis = 300, delayMillis = 0,
                     EaseOutQuart
                 )
             )
@@ -493,7 +486,7 @@ fun PlayerFullView(
         } else {
             lyricLazyState.animateScrollToItem(
                 currentLyricIndex,
-                scrollOffset = -300
+                scrollOffset = -450
             )
         }
 

@@ -34,6 +34,18 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import kotlin.time.Duration.Companion.milliseconds
 
+// READ THIS: This project is not only just a music player but a way to experiment with the android function and design patterns.
+// if something feels weird, it's most likely an design decision, but if some UI elements are causing hindrance then it should be fixed.
+
+// THE PLAYER PART:
+// The music player part of this project focuses primarily on album listening, hence there is no shuffle option (AND WILL NOT BE IMPLEMENTED IN FUTURE),
+
+// The DESIGN PART:
+// Boundless is the approach I want to implement in this project, for now it's showcased with the use of TopBar(Text which silds on to various screens).
+// I also want to implement flowing text (morphing it effortlessly), but it's a nightmare with the way android handles text, some core features must be tackled
+// in order to make it work.
+
+
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
@@ -90,9 +102,6 @@ class MainActivity : AppCompatActivity() {
                     mainViewModel.initMain(applicationContext)
                 }
             }
-
-
-
 
 
             val coroutineScope = rememberCoroutineScope()

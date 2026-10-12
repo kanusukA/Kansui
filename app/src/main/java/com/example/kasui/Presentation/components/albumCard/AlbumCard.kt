@@ -76,12 +76,10 @@ fun AlbumCard(
     selectionCount: String = "0",
 ) {
 
+    val artworkBitmap = artwork?.bitmap?.collectAsStateWithLifecycle()
 
     val animatedSelectionColor =
         animateColorAsState(if (selected) TitleColor.copy(alpha = 0.35f) else Color.Transparent)
-
-    val art = artwork?.getBitmap(LocalContext.current)
-        ?.collectAsStateWithLifecycle(null)?.value
 
     Box(
         modifier = Modifier
@@ -119,7 +117,7 @@ fun AlbumCard(
         ) {
             AsyncImage(
                 modifier = Modifier.size(170.dp),
-                model = art ?: R.drawable.cover,
+                model = artworkBitmap?.value ?: R.drawable.cover,
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 clipToBounds = true,

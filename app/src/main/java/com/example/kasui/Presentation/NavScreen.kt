@@ -73,9 +73,6 @@ fun NavScreen(
         PlayerViewModel(mainViewModel)
     }
 
-    // player
-
-
     DisposableEffect(Unit) {
         val sessionToken = SessionToken(context, ComponentName(context, Player::class.java))
         val controllerFuture = MediaController.Builder(context, sessionToken).buildAsync()
@@ -156,7 +153,6 @@ fun NavScreen(
     }
 
     LaunchedEffect(navState) {
-        println("navChange ${navState.popBack} : ${navState.navRoute}")
         if (navState.popBack) {
             navController.popBackStack()
 
@@ -166,21 +162,17 @@ fun NavScreen(
                 is Home -> navController.navigate(Home().route)
                 is Library -> navController.navigate(Library().route)
                 is Search -> navController.navigate(Search().route)
-                is WelcomeSearchAlbum -> navController.navigate(WelcomeSearchAlbum().route)
-                is WelcomeLogin -> navController.navigate(WelcomeLogin().route)
-                is WelcomeSetupAlbum -> navController.navigate(WelcomeSetupAlbum().route)
                 is PlayerView -> {
                     NavManager.changePlayerViewState(PlayerFullViewState.PLAYING)
                     navController.navigate(PlayerView().route)
                 }
+
+                else -> navController.navigate(Home().route)
             }
         }
 
 
     }
-
-
-    val welcomeViewmodel: WelcomeViewmodel = viewModel(key = "WELCOME_VIEWMODEL")
 
 
     Surface(
@@ -193,40 +185,6 @@ fun NavScreen(
                 navController = navController,
                 startDestination = NavRoutes.Home().route// Define the initial screen
             ) {
-
-                composable(route = NavRoutes.WelcomeLogin().route) {
-                    BackHandler(enabled = true) {
-                        println("POP back")
-                        when (navState.welcomeSubRoutes) {
-
-                            WelcomeSubRoutes.LOGIN -> TODO()
-                            WelcomeSubRoutes.SETUP -> {
-                                NavManager.changeNavState(
-                                    NavRoutes.WelcomeLogin(
-                                        popBackStack = true
-                                    )
-                                )
-                            }
-
-                            WelcomeSubRoutes.SEARCH -> {
-                                NavManager.changeNavState(
-                                    NavRoutes.WelcomeSetupAlbum(
-                                        popBackStack = true
-                                    )
-                                )
-                            }
-
-                            WelcomeSubRoutes.NONE -> {}
-                        }
-                    }
-                    WelcomeScreen(
-                        welcomeViewmodel = welcomeViewmodel,
-                        topBarViewModel = topBarViewModel,
-                        scrollPastFirstItem = {
-                            NavManager.setTopBarVisibility(!it)
-                        }
-                    )
-                }
 
                 // Home Screen Destination
                 composable(route = NavRoutes.Home().route) {
@@ -247,7 +205,6 @@ fun NavScreen(
                 // Profile Screen Destination with Arguments
                 composable(route = NavRoutes.Album().route) { backStackEntry ->
                     BackHandler(enabled = true) {
-                        println("POP back")
                         when (navState) {
                             else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
                         }
@@ -258,7 +215,6 @@ fun NavScreen(
 
                 composable(route = NavRoutes.Search().route) {
                     BackHandler(enabled = true) {
-                        println("POP back")
                         when (navState) {
                             else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
                         }
@@ -273,7 +229,6 @@ fun NavScreen(
 
                 composable(route = NavRoutes.Library().route) {
                     BackHandler(enabled = true) {
-                        println("POP back")
                         when (navState) {
                             else -> NavManager.changeNavState(NavRoutes.Home(popBackStack = true))
                         }
@@ -288,8 +243,6 @@ fun NavScreen(
 
                 composable(route = PlayerView().route) {
                     BackHandler(enabled = true) {
-                        println("POP back")
-                        println("Entries : ")
                         if (playerFullViewState == PlayerFullViewState.QUEUE || playerFullViewState == PlayerFullViewState.LYRICS) {
                             NavManager.changePlayerViewState(PlayerFullViewState.PLAYING)
                         } else {
@@ -314,7 +267,7 @@ fun NavScreen(
             )
 
             TopBar(
-                topBarViewModel,
+                topBarViewModel
             )
 
 
@@ -333,14 +286,11 @@ fun NavScreen(
                 )
             ) {
                 BottomBar(
-                    welcomeViewmodel = welcomeViewmodel,
                     navController = navController,
                     modifier = Modifier
                 )
             }
 
-            //PlayerFullView(modifier = Modifier)
-            //PlayerView(modifier = Modifier.align(Align      ment.BottomCenter))
             if (miniPlayerVisible) {
                 PlayerView(
                     modifier = Modifier

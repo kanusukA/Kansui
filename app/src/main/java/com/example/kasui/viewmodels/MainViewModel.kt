@@ -83,6 +83,12 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    fun refetchArtworks(albums: List<Album>) {
+        viewModelScope.launch(Dispatchers.IO) {
+            MediaManager.fetchAllArtwork(application.applicationContext, albums)
+        }
+    }
+
     fun reTagging() {
         viewModelScope.launch(Dispatchers.IO) {
             val albumDao = AlbumDatabase.getInstance(application.applicationContext).getAlbumDao()
@@ -109,7 +115,7 @@ class MainViewModel(application: Application) : AndroidViewModel(application) {
             println("ALREADY LOGGED IN")
             when (NavManager.navStates.value) {
                 //is NavRoutes.WelcomeLogin -> NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
-                is NavRoutes.WelcomeLogin -> NavManager.changeNavState(NavRoutes.Home())
+//                is NavRoutes.WelcomeLogin -> NavManager.changeNavState(NavRoutes.Home())
                 else -> {}
             }
             return

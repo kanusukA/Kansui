@@ -84,8 +84,7 @@ fun AlbumScreen(
         mutableStateOf(AlbumScreenState.DEFAULT)
     }
 
-    val artwork by album.album.artwork.getBitmap(LocalContext.current)
-        .collectAsStateWithLifecycle(null)
+    val artwork by album.album.artwork.bitmap.collectAsStateWithLifecycle()
 
     val tracks by album.tracks.collectAsStateWithLifecycle(initialValue = emptyList())
 

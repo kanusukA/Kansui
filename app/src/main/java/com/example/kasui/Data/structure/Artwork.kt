@@ -19,7 +19,10 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 
@@ -29,8 +32,7 @@ data class Artwork(
     var width: Int = 0,
     var url: String? = null,
     var uri: Uri? = null,
-    @Ignore private var bitmap: Bitmap? = null,
-    @Ignore private var notFound: Boolean = false,
+    @Ignore var notFound: Boolean = false,
     var bgColor: Color? = null,
     var textColor1: Color? = null,
     var textColor2: Color? = null, // opposite to textColor1
@@ -38,17 +40,18 @@ data class Artwork(
     var textColor4: String? = null,
 ) {
 
-    fun getBitmap(context: Context): Flow<Bitmap?> = flow {
-        if (notFound) {
-            emit(null)
-        } else {
-            if (bitmap == null && uri != null) {
-                bitmap = MediaManager.fetchArtworkFromTrackUri(context, uri!!)
-                if (bitmap == null) {
-                    notFound = true
-                }
+    @Ignore
+    private var _bitmap: MutableStateFlow<Bitmap?> = MutableStateFlow(null)
+
+    @Ignore
+    val bitmap = _bitmap.asStateFlow()
+
+    fun getBitmap(context: Context) {
+        if (_bitmap.value == null && uri != null) {
+            _bitmap.update { MediaManager.fetchArtworkFromTrackUri(context, uri!!) }
+            if (_bitmap.value == null) {
+                notFound = true
             }
-            emit(bitmap)
         }
 
     }
@@ -58,15 +61,15 @@ data class Artwork(
         var rgb = mutableListOf(0f, 0f, 0f)
 
         if (bitmap != null) {
-            val pixelsArray = IntArray(bitmap!!.width * bitmap!!.height)
-            bitmap!!.getPixels(
+            val pixelsArray = IntArray(bitmap.value!!.width * bitmap.value!!.height)
+            bitmap.value!!.getPixels(
                 pixelsArray,
                 0,
-                bitmap!!.width,
+                bitmap.value!!.width,
                 0,
                 0,
-                bitmap!!.width,
-                bitmap!!.height
+                bitmap.value!!.width,
+                bitmap.value!!.height
             )
             for (pixel in pixelsArray) {
                 val color = Color(pixel)

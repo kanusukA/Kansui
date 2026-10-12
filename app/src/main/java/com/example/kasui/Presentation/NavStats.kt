@@ -46,26 +46,26 @@ sealed class NavRoutes(
     data class PlayerView(val route: String = "Player", var popBackStack: Boolean = false) :
         NavRoutes(popBackStack, navRoute = route)
 
-    data class WelcomeLogin(
-        val route: String = "Welcome",
-        val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.LOGIN,
-        var popBackStack: Boolean = false,
-    ) :
-        NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
-
-    data class WelcomeSetupAlbum(
-        val route: String = "Welcome",
-        val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.SETUP,
-        var popBackStack: Boolean = false,
-    ) :
-        NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
-
-    data class WelcomeSearchAlbum(
-        val route: String = "Welcome",
-        val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.SEARCH,
-        var popBackStack: Boolean = false,
-    ) :
-        NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
+//    data class WelcomeLogin(
+//        val route: String = "Welcome",
+//        val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.LOGIN,
+//        var popBackStack: Boolean = false,
+//    ) :
+//        NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
+//
+//    data class WelcomeSetupAlbum(
+//        val route: String = "Welcome",
+//        val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.SETUP,
+//        var popBackStack: Boolean = false,
+//    ) :
+//        NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
+//
+//    data class WelcomeSearchAlbum(
+//        val route: String = "Welcome",
+//        val subRoute: WelcomeSubRoutes = WelcomeSubRoutes.SEARCH,
+//        var popBackStack: Boolean = false,
+//    ) :
+//        NavRoutes(popBackStack, navRoute = route, welcomeSubRoutes = subRoute)
 }
 
 
@@ -77,7 +77,7 @@ enum class WelcomeSubRoutes {
 }
 
 object NavManager {
-    private var _navStates: MutableStateFlow<NavRoutes> = MutableStateFlow(NavRoutes.WelcomeLogin())
+    private var _navStates: MutableStateFlow<NavRoutes> = MutableStateFlow(NavRoutes.Home())
     val navStates: StateFlow<NavRoutes> = _navStates
 
     private var _playerViewState: MutableStateFlow<PlayerFullViewState> =
@@ -93,9 +93,6 @@ object NavManager {
 
     private var _playerLyricsFadeUi = MutableStateFlow(false)
     val playerLyricsFadeUi = _playerLyricsFadeUi.asStateFlow()
-
-    val animPlayerFadeEnterTween = tween<EnterTransition>(durationMillis = 300, delayMillis = 0)
-    val animPlayerFadeExitTween = tween<ExitTransition>(durationMillis = 600, delayMillis = 2000)
 
     private var _darkMode = MutableStateFlow(false)
     val darkMode = _darkMode.asStateFlow()
@@ -134,19 +131,6 @@ object NavManager {
     private var _miniPlayerViewVisible = MutableStateFlow<Boolean>(true)
     val miniPlayerVisible = _miniPlayerViewVisible
 
-//    private var _playingTrack: MutableStateFlow<Track?> = MutableStateFlow(
-//        Track(
-//            id = 0L,
-//            albumName = "Long Nights and Wasted Affairs",
-//            artistName = "Mind's Eye",
-//            durationInMillis = 3000,
-//            name = "astrology Girl",
-//            hasLyrics = false,
-//            uri = Uri.EMPTY
-//        )
-//    )
-//    val playingTrack = _playingTrack.asStateFlow()
-
     // INTER_VIEWMODEL_VARIABLES
     private var _albumScreenState: MutableStateFlow<AlbumScreenState> =
         MutableStateFlow(AlbumScreenState.DEFAULT)
@@ -170,14 +154,10 @@ object NavManager {
     fun changePlayerViewState(state: PlayerFullViewState) {
         _playerViewState.update { state }
         _bottomBarVisible.update { state == PlayerFullViewState.PLAYING }
-
         _darkMode.update { state == PlayerFullViewState.LYRICS }
 
     }
 
-//    fun playTrack(track: Track) {
-//        _playingTrack.update { track }
-//    }
 
 }
 

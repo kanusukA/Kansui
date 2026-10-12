@@ -289,16 +289,16 @@ fun WelcomeScreen(
     ) {
 
         when (currentNavRoute.navRoute) {
-            NavRoutes.WelcomeLogin().route -> {
-                when (currentNavRoute.welcomeSubRoutes) {
-                    WelcomeSubRoutes.LOGIN -> loginBody(modifier = Modifier.align(Alignment.Center))
-                    WelcomeSubRoutes.SETUP -> newUserScreen()
-                    WelcomeSubRoutes.SEARCH -> searchResultScreen()
-                    else -> {
-
-                    }
-                }
-            }
+//            NavRoutes.WelcomeLogin().route -> {
+//                when (currentNavRoute.welcomeSubRoutes) {
+//                    WelcomeSubRoutes.LOGIN -> loginBody(modifier = Modifier.align(Alignment.Center))
+//                    WelcomeSubRoutes.SETUP -> newUserScreen()
+//                    WelcomeSubRoutes.SEARCH -> searchResultScreen()
+//                    else -> {
+//
+//                    }
+//                }
+//            }
 
             else -> {}
         }

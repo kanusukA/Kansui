@@ -148,13 +148,12 @@ fun PlayerView(
     val currentTrack by playerViewModel.currentTrack.collectAsStateWithLifecycle()
     val currentAlbum by playerViewModel.currentAlbum.collectAsStateWithLifecycle()
 
+    val artwork = currentAlbum?.album?.artwork?.bitmap?.collectAsStateWithLifecycle()
+
     val progress by playerViewModel.progress.collectAsStateWithLifecycle(0f)
     val progressText by playerViewModel.ProgressText.collectAsStateWithLifecycle("0:00")
 
     val animatedProgress = animateFloatAsState(progress)
-
-    val artwork = currentAlbum?.album?.artwork?.getBitmap(LocalContext.current)
-        ?.collectAsStateWithLifecycle(null)?.value
 
     var nextVisibility by remember {
         mutableFloatStateOf(0f)
@@ -262,7 +261,7 @@ fun PlayerView(
                     .padding(start = 8.dp)
                     .size(46.dp)
                     .clip(CircleShape),
-                model = artwork ?: R.drawable.cover,
+                model = artwork?.value ?: R.drawable.cover,
                 contentDescription = "Album Cover"
             )
 
@@ -373,6 +372,8 @@ fun PlayerFullView(
 
     val currentAlbum by playerViewModel.currentAlbum.collectAsStateWithLifecycle()
     val currentTrack by playerViewModel.currentTrack.collectAsStateWithLifecycle()
+
+    val artwork = currentAlbum?.album?.artwork?.bitmap?.collectAsStateWithLifecycle()
 
     val playerFullViewState by NavManager.playerViewState.collectAsStateWithLifecycle()
 
@@ -509,13 +510,6 @@ fun PlayerFullView(
         currentLyricIndex = 0
 
     }
-
-    // NOTE: MUST NOT BE TAMPERED: IT'S TIED TO THE SIZE OF LYRIC ITEM
-
-
-    val artwork =
-        currentAlbum?.album?.artwork?.getBitmap(LocalContext.current)
-            ?.collectAsStateWithLifecycle(null)?.value
 
     Box(
         Modifier
@@ -669,7 +663,7 @@ fun PlayerFullView(
                                 .size(360.dp)
                                 .clip(RoundedCornerShape(24.dp))
                                 .alpha(animImageFade.value),
-                            model = artwork ?: R.drawable.cover,
+                            model = artwork?.value ?: R.drawable.cover,
                             contentDescription = "Album Cover",
                             colorFilter = ColorFilter.tint(
                                 animAlbumTint.value,

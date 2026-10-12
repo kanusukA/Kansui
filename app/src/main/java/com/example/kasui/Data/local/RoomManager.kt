@@ -34,6 +34,9 @@ interface AlbumDao {
     @Query("SELECT * FROM albums")
     fun getAllAlbumEntities(): Flow<List<AlbumEntity>>
 
+    @Query("SELECT * FROM albums")
+    suspend fun getAllAlbumEntitiesNow(): List<AlbumEntity>
+
     @Query("SELECT * FROM genres")
     fun getAllGenres(): Flow<List<Genre>>
 
@@ -184,6 +187,7 @@ class AlbumRepository(private val albumDao: AlbumDao) {
     suspend fun getAllTracksNow(): List<Track> {
         return albumDao.getAllTracksNow();
     }
+    
 
     fun addTracks(tracks: List<Track>) {
         coroutineScope.launch(Dispatchers.IO) {

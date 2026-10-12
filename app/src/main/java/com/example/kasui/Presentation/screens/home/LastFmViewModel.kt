@@ -18,9 +18,9 @@ import kotlinx.coroutines.launch
 class LastFmViewModel : ViewModel() {
 
     val lastfmState = LastFmManager.lastFmState.map {
-        if (it == LASTFM_STATE.SIGNED_IN && NavManager.navStates.value == NavRoutes.WelcomeLogin()) {
-            NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
-        }
+//        if (it == LASTFM_STATE.SIGNED_IN && NavManager.navStates.value == NavRoutes.WelcomeLogin()) {
+//            NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
+//        }
         it
     }.stateIn(
         scope = viewModelScope,

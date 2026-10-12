@@ -55,7 +55,6 @@ object MediaManager {
 
     private var albumRepository: AlbumRepository? = null
 
-
     fun initRepo(context: Context) {
         val albumDb = AlbumDatabase.getInstance(context)
         albumRepository = AlbumRepository(albumDb.getAlbumDao())
@@ -88,11 +87,7 @@ object MediaManager {
 
     fun loadTags(context: Context, tracks: List<Track>, force: Boolean = false): List<Track> {
         _mediaState.update { MediaManagerState.LOADING_INFO }
-        var startTime = System.currentTimeMillis()
-        println("tags loading ${tracks.size} ${System.currentTimeMillis() - startTime}")
         val listOfIds = mutableListOf<Long>();
-
-        startTime = System.currentTimeMillis()
 
         val pfds = tracks.mapNotNull {
             if ((it.isTagLoaded && !force) || it.fileType != FILETYPES.FLAC) {
@@ -107,19 +102,12 @@ object MediaManager {
         }
         val fds = pfds.map { it.detachFd() }.toIntArray()
 
-        println("loaded fds - ${fds.size} in ${System.currentTimeMillis() - startTime}")
-
         if (fds.isEmpty()) {
             _mediaState.update { MediaManagerState.FREE }
             return emptyList()
         }
 
-        startTime = System.currentTimeMillis()
-
         val tags: List<Map<String, String>> = TagLib.stringFromJNI(fds, listOfIds.toLongArray())
-
-        println("parsed tags ${tags.size} in ${System.currentTimeMillis() - startTime}")
-        startTime = System.currentTimeMillis()
 
         val tagged = tags.mapNotNull { tagTrack ->
             val track = tracks.find { it.id.toString() == tagTrack["id"] }
@@ -144,19 +132,14 @@ object MediaManager {
             }
             track
         }
-        Timber.d("tagged ${tagged.size} in ${System.currentTimeMillis() - startTime}")
-        Timber.d(tagged.toString())
 
         pfds.forEach {
             it.close()
         }
 
-        println("tags loaded")
-
         _mediaState.update { MediaManagerState.FREE }
 
         return tagged
-
     }
 
 
@@ -195,22 +178,12 @@ object MediaManager {
 
             val _ID_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media._ID)
             val ALBUM_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM)
-            val ALBUM_ARTIST_Index =
-                cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ARTIST)
             val ALBUM_ID_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ALBUM_ID)
             val ARTIST_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST)
-            val ARTIST_ID_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.ARTIST_ID)
-            val BITRATE_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.BITRATE)
-            val BITS_PER_SAMPLE_Index =
-                cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.BITS_PER_SAMPLE)
-            val DATE_ADDED_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATE_ADDED)
-            val DISC_NUMBER_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DISC_NUMBER)
             val DURATION_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DURATION)
             val GENRE_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE)
             val GENRE_ID_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.GENRE_ID)
-            val SAMPLERATE_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.SAMPLERATE)
             val TITLE_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TITLE)
-            val TRACK_Index = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.TRACK)
             val MIME_TYPE_INDEX = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.MIME_TYPE)
             val DATA_INDEX = cursor.getColumnIndexOrThrow(MediaStore.Audio.Media.DATA)
 
@@ -220,17 +193,18 @@ object MediaManager {
             }
 
             while (cursor.moveToNext()) {
-                val musicUri = ContentUris.withAppendedId(uri, cursor.getLong(_ID_Index))
+                val musicId = cursor.getLong(_ID_Index)
+
+                if (tracks.find { it.id == musicId } != null) {
+                    continue
+                }
+
+                val musicUri = ContentUris.withAppendedId(uri, musicId)
                 val albumUri = ContentUris.withAppendedId(uri, cursor.getLong(ALBUM_ID_Index))
+
                 val mime_type = cursor.getStringOrNull(MIME_TYPE_INDEX)
 
                 val path = cursor.getStringOrNull(DATA_INDEX)
-
-                val musicId = cursor.getLong(_ID_Index)
-                if (tracks.find { it.id == musicId } != null) {
-                    println("SKIPPING TRACK LOADING - ID : $musicId")
-                    continue
-                }
 
 
                 val filetype = if (mime_type == "audio/mpeg" || mime_type == "audio/mp3") {
@@ -240,6 +214,7 @@ object MediaManager {
                 } else {
                     FILETYPES.OTHER
                 }
+
                 val track = Track(
                     id = cursor.getLong(_ID_Index),
                     uri = musicUri,
@@ -265,9 +240,7 @@ object MediaManager {
                         track.isSynced = true
 
                     }
-
                 }
-
 
                 var index: Int? = null
 
@@ -288,7 +261,6 @@ object MediaManager {
                         width = 600,
                         url = null,
                         uri = musicUri,
-                        bitmap = null,
                         bgColor = null,
                         textColor1 = null,
                         textColor2 = null,
@@ -321,7 +293,6 @@ object MediaManager {
                         InsertAlbum(albumEntity, tracks, genres)
                     )
 
-
                 }
 
             }
@@ -340,9 +311,16 @@ object MediaManager {
             albumRepository?.addTracks(tagged)
         }
 
-
     }
 
+    fun fetchAllArtwork(context: Context, albums: List<Album>, force: Boolean = false) {
+        albums.forEach {
+            if (force || !it.album.artwork.notFound) {
+                it.album.artwork.getBitmap(context)
+            }
+
+        }
+    }
 
     fun fetchArtworkFromTrackUri(context: Context, musicUri: Uri): android.graphics.Bitmap? {
         // return context.contentResolver.loadThumbnail(musicUri, Size(500, 500), null)
@@ -384,86 +362,6 @@ object MediaManager {
 
     }
 
-
-    @Deprecated(message = "USE TRACK INSTEAD")
-    fun fetchSongsFromAlbum(album: Album): List<Song> {
-        val songs = mutableListOf<Song>()
-//        album.albumRelationships?.tracks?.forEach { id ->
-//            _rawSongList.value.forEach { song ->
-//                if (song.id == id) {
-//                    songs.add(song)
-//                    return@forEach
-//                }
-//            }
-//        }
-        return songs
-    }
-
-
-    val artworkFetcher = CoroutineScope(Dispatchers.IO)
-
-
-    // MUSIC BRAINZ
-    @Deprecated(message = "MUSICBRAINZ is not used!")
-    suspend fun syncAlbumLibraryWithMusicBrainZ() {
-//        _mediaState.update { MediaManagerState.LOADING_RAW }
-//        val syncList: MutableMap<Int, List<Album>> = mutableMapOf()
-//
-//        _rawAlbumList.value.forEachIndexed { index, album ->
-//
-//            delay(1200.milliseconds)
-//
-//            val searchReleases = musicBrainz.searchReleases(album.albumAttributes.albumName, null)
-//
-//            if (searchReleases?.releases != null && searchReleases.releases.isNotEmpty()) {
-//                var count = 2
-//                if (searchReleases.releases.size < 2) count = searchReleases.releases.size
-//                val resultList = mutableListOf<Album>()
-//                for (releaseIndex in 0..<count) {
-//                    val release = searchReleases.releases[releaseIndex]
-//
-//                    val coverArt = musicBrainz.getReleaseCover(release.id)
-//
-//                    val artwork = Artwork(
-//                        height = 0,
-//                        width = 0,
-//                        url = if (!coverArt?.images.isNullOrEmpty()) coverArt.images[0].image else null
-//                    )
-//
-//                    val attributes = AlbumAttributes(
-//                        artistName = if (release.artistCredit.isNotEmpty()) release.artistCredit[0].name else "Unknown",
-//                        albumName = release.title ?: " Unknown Album",
-//                        artwork = artwork,
-//                        genreNames = emptyList(),
-//                        isSingle = release.trackCount == 1,
-//                        isCompilation = false,
-//                        isComplete = false,
-//                        url = "",
-//                        trackCount = release.trackCount
-//                    )
-//
-//                    resultList.add(
-//                        Album(
-//                            id = album.id,
-//                            href = release.id,
-//                            albumAttributes = attributes,
-//                            albumRelationships = null,
-//                            albumViews = null
-//                        )
-//                    )
-//
-//
-//                }
-//
-//                syncList[index] = resultList
-//            }
-
-//        }
-//
-//        _searchAlbumList.update { syncList.toMap() }
-//        _mediaState.update { MediaManagerState.FREE }
-
-    }
 
 }
 

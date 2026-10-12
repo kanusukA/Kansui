@@ -196,27 +196,27 @@ fun TopBar(
                 subFontSizeScale = 45f
             }
 
-            is NavRoutes.WelcomeLogin -> {
-                headingText = "Welcome"
-                TopPadding = 0.dp
-                subHeading = if (username.isNotEmpty()) username else "Kansui"
-                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
-            }
-
-            is NavRoutes.WelcomeSearchAlbum -> {
-                headingText = "Welcome"
-                subHeading = ""
-                TopPadding = 0.dp
-                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.ALBUM_WELCOME)
-            }
-
-            is NavRoutes.WelcomeSetupAlbum -> {
-                headingText = "Welcome"
-                subHeading = if (username.isNotEmpty()) username else "Kansui"
-                TopPadding = 0.dp
-
-                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
-            }
+//            is NavRoutes.WelcomeLogin -> {
+//                headingText = "Welcome"
+//                TopPadding = 0.dp
+//                subHeading = if (username.isNotEmpty()) username else "Kansui"
+//                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+//            }
+//
+//            is NavRoutes.WelcomeSearchAlbum -> {
+//                headingText = "Welcome"
+//                subHeading = ""
+//                TopPadding = 0.dp
+//                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.ALBUM_WELCOME)
+//            }
+//
+//            is NavRoutes.WelcomeSetupAlbum -> {
+//                headingText = "Welcome"
+//                subHeading = if (username.isNotEmpty()) username else "Kansui"
+//                TopPadding = 0.dp
+//
+//                topBarViewModel.setTopBarSelectionState(TopBarSelectionState.NONE)
+//            }
 
             is NavRoutes.PlayerView -> {
                 when (playerFullViewState) {

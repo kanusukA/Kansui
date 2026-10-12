@@ -45,18 +45,14 @@ import kotlin.time.Duration.Companion.milliseconds
 // I also want to implement flowing text (morphing it effortlessly), but it's a nightmare with the way android handles text, some core features must be tackled
 // in order to make it work.
 
-
 class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
     private val permissionForAudio = MutableStateFlow(false)
 
-    private val audioPermission = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+    private val audioPermission =
         Manifest.permission.READ_MEDIA_AUDIO
-    } else {
-        Manifest.permission.READ_EXTERNAL_STORAGE
-    }
 
     // 2. Register the permission launcher callback
     private val requestPermissionLauncher = registerForActivityResult(
@@ -94,8 +90,14 @@ class MainActivity : AppCompatActivity() {
 
             val mainViewModel: MainViewModel = viewModel()
 
-            // fetch and tag when permission is granted
+            // fetch music and tag when permission is granted
             val permission by permissionForAudio.collectAsStateWithLifecycle()
+
+            val albums by mainViewModel.dbAlbums.collectAsStateWithLifecycle()
+
+            LaunchedEffect(albums) {
+                mainViewModel.refetchArtworks(albums)
+            }
 
             LaunchedEffect(permission) {
                 if (permission) {
@@ -103,11 +105,6 @@ class MainActivity : AppCompatActivity() {
                 }
             }
 
-
-            val coroutineScope = rememberCoroutineScope()
-
-
-            //WelcomeScreen()
             NavScreen(mainViewModel)
         }
 

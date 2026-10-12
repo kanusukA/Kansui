@@ -107,7 +107,6 @@ import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun BottomBar(
-    welcomeViewmodel: WelcomeViewmodel,
     navController: NavController,
     modifier: Modifier = Modifier
 ) {
@@ -185,76 +184,6 @@ fun BottomBar(
             onHold = onHold,
             dragPositionY = dragPositionY,
             onClick = { bottomBarViewModel.onChangeNavState(NavRoutes.Library()) })
-    }
-
-    @Composable
-    fun WelcomeScreenTabs() {
-        if (navState.navRoute == NavRoutes.WelcomeLogin().route) {
-            when (navState.welcomeSubRoutes) {
-                WelcomeSubRoutes.LOGIN -> {
-                    BottomBarTab(
-                        icon = null,
-                        title = "Sign Up",
-                        selected = true,
-                        onHold = onHold,
-                        dragPositionY = dragPositionY,
-                        onClick = { })
-                    BottomBarTab(
-                        icon = null,
-                        title = "Sign In",
-                        selected = true,
-                        onHold = onHold,
-                        dragPositionY = dragPositionY,
-                        onClick = {
-                            welcomeViewmodel.loginLastFm(mainViewModel)
-                        })
-                }
-
-                WelcomeSubRoutes.SETUP -> {
-                    BottomBarTab(
-                        icon = null,
-                        title = "Back",
-                        selected = true,
-                        onHold = onHold,
-                        dragPositionY = dragPositionY,
-                        onClick = { })
-
-                    BottomBarTab(
-                        icon = null,
-                        title = "Select",
-                        selected = true,
-                        onHold = onHold,
-                        dragPositionY = dragPositionY,
-                        onClick = {
-                            welcomeViewmodel.albumSyncLastFm()
-                        })
-                }
-
-                WelcomeSubRoutes.SEARCH -> {
-                    BottomBarTab(
-                        icon = null,
-                        title = "Back",
-                        selected = true,
-                        onHold = onHold,
-                        dragPositionY = dragPositionY,
-                        onClick = {
-                            NavManager.changeNavState(NavRoutes.WelcomeSetupAlbum())
-                        })
-                    BottomBarTab(
-                        icon = null,
-                        title = "Finalize",
-                        selected = true,
-                        onHold = onHold,
-                        dragPositionY = dragPositionY,
-                        onClick = {
-
-                        })
-                }
-
-                WelcomeSubRoutes.NONE -> TODO()
-            }
-
-        }
     }
 
     val animBackSpacing = animateDpAsState(if (showBackTab) 100.dp else 0.dp)

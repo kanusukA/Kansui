@@ -34,12 +34,12 @@ fun SelectionAlbumCard(
                 .fillMaxWidth()
                 .height(52.dp)
         ) {
-            AsyncImage(
-                modifier = Modifier.size(52.dp),
-                model = mediaAlbum.album.artwork.getBitmap(LocalContext.current)
-                    .collectAsStateWithLifecycle(null).value,
-                contentDescription = null
-            )
+//            AsyncImage(
+//                modifier = Modifier.size(52.dp),
+//                model = mediaAlbum.album.artwork.getBitmap(LocalContext.current)
+//                    .collectAsStateWithLifecycle(null).value,
+//                contentDescription = null
+//            )
 
             Column(verticalArrangement = Arrangement.SpaceEvenly) {
                 Text(mediaAlbum.album.albumName)

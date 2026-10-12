@@ -1,6 +1,6 @@
 # KanusukA's Another Sound Interface
 
-Kansui is at surface is an simple music player, which is suited towards Album and as such does not contain many features found on a typical music player application.<br>
+Kansui at surface is a simple music player, which is suited towards Album and as such does not contain many features found on a typical music player application.<br>
 Such features include (may include in future): shuffle , tracks view , repeat and more.<br><br>
 
 
